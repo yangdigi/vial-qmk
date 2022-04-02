@@ -24,7 +24,8 @@ SWAP_HANDS_ENABLE       = no  # Disable Onehand
 RGBLIGHT_ENABLE         = no
 
 # project specific files
-SRC = \
-    led.c      \
-    matrix.c   \
+SRC ?=	matrix.c \
+        led.c \
+        light_ws2812.c \
+        rgblight.c
     
