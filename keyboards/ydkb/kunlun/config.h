@@ -8,7 +8,7 @@
 #define PRODUCT_ID      0x2263  
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    YDKB
-#define PRODUCT         Everest (FW_VER)
+#define PRODUCT         Kunlun (FW_VER)
 
 /* key matrix size */
 #define MATRIX_ROWS 5

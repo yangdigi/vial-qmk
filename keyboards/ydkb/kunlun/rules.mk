@@ -22,6 +22,7 @@ NKRO_ENABLE             = yes # Enable N-Key Rollover
 BACKLIGHT_ENABLE        = no  # Enable keyboard backlight functionality
 SWAP_HANDS_ENABLE       = no  # Disable Onehand
 RGBLIGHT_ENABLE         = no
+LTO_ENABLE              = yes 
 
 # project specific files
 SRC ?=	matrix.c \
