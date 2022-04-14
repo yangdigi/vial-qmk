@@ -13,6 +13,8 @@
 #    include "vusb.h"
 #endif
 
+#ifndef RECORE // replace 
+
 // TODO: This needs some cleanup
 
 #if !defined(NO_SUSPEND_POWER_DOWN) && defined(WDT_vect)
@@ -121,3 +123,5 @@ void suspend_wakeup_init(void) {
 
     suspend_wakeup_init_quantum();
 }
+
+#endif //RECORE
