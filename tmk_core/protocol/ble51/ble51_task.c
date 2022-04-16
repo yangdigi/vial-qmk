@@ -228,18 +228,18 @@ void ble51_task(void)
        
 
         if (ble_set_code > 0) {
-            if (ble_set_code == KC_I || ble_set_code == KC_O) {
-                ble51_puts("AT+GAPSETADVDATA=02-01-0");
-                if (ble_set_code == KC_O) ble51_cmd("4\n");
-                else ble51_init_cmd("6\n");
-                ble_set_code = 0;
-                ble51_init_cmd("ATZ\n");
+            if (ble_set_code == KC_I) {
+                ble51_cmd("AT+GAPSETADVDATA=02-01-06\n");
+            } else if (ble_set_code == KC_O) {
+                ble51_cmd("AT+GAPSETADVDATA=02-01-04\n");
             } else if (ble_set_code == KC_R) {
                 ble51_del_bonds();
                 ble51_set_blehiden('0');
                 ble51_set_blehiden('1');
-                ble_set_code = KC_I;
+                ble51_cmd("AT+GAPSETADVDATA=02-01-06\n");
             }
+            ble_set_code = 0;
+            ble51_cmd("ATZ\n");
         }
 
         /* hold consumer key */

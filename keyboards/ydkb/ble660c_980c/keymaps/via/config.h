@@ -1,0 +1,4 @@
+#pragma once
+#undef  PRODUCT
+#define PRODUCT     BLE660C_980C (FW_VER_VIA)
+#define DYNAMIC_KEYMAP_LAYER_COUNT 3

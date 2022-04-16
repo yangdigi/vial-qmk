@@ -3,16 +3,17 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DM4C
+#define FW_VER          QMK_DM4G
 #define FW_VER_VIA      VIA_DM4G
+
 #define VENDOR_ID       0x9D5B 
-#define PRODUCT_ID      0x2167  
-#define DEVICE_VER      0x0011
+#define PRODUCT_ID      0x19C1
+#define DEVICE_VER      0x0001
 #define MANUFACTURER    YDKB
-#define PRODUCT         YD67BLE (FW_VER)
+#define PRODUCT         BLE660C/BLE980C (FW_VER)
 
 
-#define MATRIX_ROWS 5  //595 num of each side.
+#define MATRIX_ROWS 7
 #define MATRIX_COLS 16
 
 
@@ -59,19 +60,19 @@
     #error "USART configuration is needed."
 #endif
 /* BT Power Control */
-#define BT_POWERED    (~PORTF & (1<<7))
-#define bt_power_init()    do { DDRF |= (1<<7); PORTF &= ~(1<<7);} while(0)
-#define turn_off_bt()    do { PORTF |= (1<<7); UCSR1B &= ~(1<<TXEN1); } while(0)
-#define turn_on_bt()    do { PORTF &= ~(1<<7); UCSR1B |= (1<<TXEN1);} while(0)
+#define BT_POWERED    (~PORTE & (1<<6))
+#define bt_power_init()  do { DDRE  |=  (1<<6); PORTE &= ~(1<<6);} while(0)
+#define turn_off_bt()    do { PORTE |=  (1<<6); UCSR1B &= ~(1<<TXEN1);} while(0)
+#define turn_on_bt()     do { PORTE &= ~(1<<6); UCSR1B |=  (1<<TXEN1);} while(0)
 
-#define BLE_NAME "YD67BLE"
+#define BLE_NAME_VARIABLE
 #define BLE_BATTERY_SERVICE
 #define BT_POWER_SAVE_TIME 3000
-
+#define BLE51_CONSUMER_ON_DELAY 50
 #define UPDATE_BATTERY_WHEN_CHARGING
-#define BATTERY_CHARGING (~PINC & (1<<7))
-#define CHARGING_FIX_VALUE 90
-#define CHARGING_STATE_INIT()    do { DDRC &= ~(1<<7); PORTC |= (1<<7);} while(0)
+#define BATTERY_CHARGING (~PINE & (1<<2))
+#define CHARGING_FIX_VALUE 40
+#define CHARGING_STATE_INIT()    do { DDRE &= ~(1<<2); PORTE |= (1<<2);} while(0)
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.

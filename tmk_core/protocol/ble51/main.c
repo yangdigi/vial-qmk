@@ -88,8 +88,8 @@ int main(void)
         }
         if (BLE51_PowerState > 1 || (!ble51_boot_on && (USB_DeviceState != DEVICE_STATE_Configured))) { //power down
             suspend_power_down();
+            watchdog_on();
             if (suspend_wakeup_condition()) {
-                watchdog_on();
                 kb_idle_times = 0; 
                 suspend_wakeup_init_action();
                 BLE51_PowerState = 1;

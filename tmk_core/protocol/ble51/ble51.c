@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "wait.h"
 
 #ifndef BLE51_CONSUMER_ON_DELAY
-#define BLE51_CONSUMER_ON_DELAY 366
+#define BLE51_CONSUMER_ON_DELAY 633
 #endif 
 
 /* Host driver */
@@ -84,7 +84,9 @@ void ble51_init_cmd(char *s) {
 
 __attribute__ ((weak))
 void ble51_init_blename(void){
+#ifdef BLE_NAME
     ble51_set_blename(BLE_NAME);
+#endif
 }
 
 void ble51_init(void)
@@ -308,9 +310,8 @@ void ble51_set_connectable(uint8_t mode)
 
 void ble51_set_blehiden(uint8_t mode)
 {
-    ble51_puts("AT+BLEHIDEN=");
-    ble51_putc(mode);
-    ble51_init_cmd("\n");
+    if (mode == '0') ble51_init_cmd("AT+BLEHIDEN=0\n");
+    else ble51_init_cmd("AT+BLEHIDEN=1\n");
 }
 
 void ble51_set_blename(char *s)
