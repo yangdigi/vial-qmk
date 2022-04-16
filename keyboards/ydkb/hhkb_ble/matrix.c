@@ -119,7 +119,7 @@ void matrix_init(void)
 
     if (is_ver_jp) {
         hhkb_matrix.rows = 16;
-        hhkb_matrix.final_col  = 6; //2-6 to 0-4
+        hhkb_matrix.final_col  = 4; //2-6 to 0-4
     } else {
         hhkb_matrix.rows = 8;
         hhkb_matrix.final_col  = 7;
