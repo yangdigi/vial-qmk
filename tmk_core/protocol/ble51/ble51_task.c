@@ -236,10 +236,10 @@ void ble51_task(void)
                 ble51_del_bonds();
                 ble51_set_blehiden('0');
                 ble51_set_blehiden('1');
+                ble51_cmd("ATZ\n");
                 ble51_cmd("AT+GAPSETADVDATA=02-01-06\n");
             }
             ble_set_code = 0;
-            ble51_cmd("ATZ\n");
         }
 
         /* hold consumer key */
