@@ -194,7 +194,7 @@ uint8_t matrix_scan(void)
 
             if (BLE51_PowerState >= 2) {
                 _delay_us(10); // scan faster when power saving
-                if (wake_scan && row == 7 && col == 6) { // wake scan complete
+                if (wake_scan && r == 7 && c == 4) { // wake scan complete
                     wake_scan = 0;
                     return 1;
                 }

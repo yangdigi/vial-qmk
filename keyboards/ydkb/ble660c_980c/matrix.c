@@ -134,10 +134,6 @@ uint8_t matrix_scan(void)
     for (uint8_t r = 0; r < fc_matrix_rows; r++) {
         SET_ROW(r);
         for (uint8_t c = 0; c < MATRIX_COLS; c++) {
-
-            SET_COL(c);
-            _delay_us(3);
-
             uint8_t row = r;
             uint8_t col = c;
             if (!is_980c) {
@@ -145,6 +141,10 @@ uint8_t matrix_scan(void)
                 row = matrix_trans[r][c] >> 4;
                 col = matrix_trans[r][c] & 0xf;
             }
+
+            SET_COL(c);
+            _delay_us(3);
+
             
             if (matrix_prev[row] & (1<<col)) {
                 KEY_HYS_ON();
@@ -189,7 +189,7 @@ uint8_t matrix_scan(void)
 
             if (BLE51_PowerState >= 2) {
                 _delay_us(10); // scan faster when power saving
-                if (row == 3 && wake_scan) { // wake scan for nothing
+                if (r == 3 && wake_scan) { // wake scan for nothing
                     wake_scan = 0;
                     return 1;
                 }
