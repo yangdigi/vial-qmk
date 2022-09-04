@@ -10,12 +10,13 @@ LTO_ENABLE = yes
 # Vial settings
 VIA_ENABLE = yes
 VIAL_ENABLE = yes
-VIAL_ENCODERS_ENABLE = yes
+ENCODER_MAP_ENABLE = yes
 VIALRGB_ENABLE = yes
 
 # Reduce firmware size
 QMK_SETTINGS = no
 TAP_DANCE_ENABLE = no
 COMBO_ENABLE = no
+KEY_OVERRIDE_ENABLE = no
 
 SRC += oled.c
