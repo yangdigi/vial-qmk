@@ -3,7 +3,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DM3U
+#define FW_VER          QMK_DMB9
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2263  
 #define DEVICE_VER      0x0001

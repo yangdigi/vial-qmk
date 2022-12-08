@@ -3,8 +3,8 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DM4K
-#define FW_VER_VIA      VIA_DM4K
+#define FW_VER          QMK_DMC8
+#define FW_VER_VIA      VIA_DMC8
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2167  
 #define DEVICE_VER      0x0011

@@ -26,6 +26,7 @@ bool is_ver595 = 1;
 
 /* matrix state(1:on, 0:off) */
 static matrix_row_t matrix[MATRIX_ROWS] = {0};
+static matrix_row_t matrix_v595[MATRIX_ROWS] = {0};
 static matrix_row_t matrix_v11[MATRIX_ROWS] = {0};
 
 
@@ -136,12 +137,17 @@ static void matrix_scan_ver595(void) {
                     row_trans = matrix_trans[row-2][real_col] >> 4;
                     col_trans = matrix_trans[row-2][real_col] & 0xf;
                 }
-                matrix_row_t *p_row = &matrix[row_trans];
+
+                matrix_row_t row_prev  = matrix_v595[row_trans];
+                matrix_row_t *p_row = &matrix_v595[row_trans];
                 matrix_row_t col_mask = ((matrix_row_t)1 << col_trans);
                 if        (*debounce >= DEBOUNCE_DN_MASK) {
                     *p_row |=  col_mask;
                 } else if (*debounce <= DEBOUNCE_UP_MASK) {
                     *p_row &= ~col_mask;
+                }
+                if (*p_row != row_prev) {
+                    matrix[row_trans] = matrix_v595[row_trans];
                 }
             }
         }
@@ -173,13 +179,8 @@ static void matrix_scan_ver11(void) {
                     *p_row &= ~col_mask;
                 } 
                 if (*p_row != row_prev) {
-                    keyevent_t e = (keyevent_t){
-                        .key = (keypos_t){ .row = row, .col = col },
-                        .pressed = (*debounce_v11 >= DEBOUNCE_DN_MASK),
-                        .time = (timer_read() | 1)
-                    };
-                    action_exec(e);
-                }
+                    matrix[row] = matrix_v11[row];
+                }                    
             }
         }
         if (matrix_v11[row] > 0) {
