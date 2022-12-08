@@ -81,7 +81,13 @@ void eeconfig_debug_rgblight(void) {
 void rgblight_init(void)
 {
     dprintf("rgblight_init start!\n");
-    eeconfig_write_rgblight_default();
+#if 1
+    if (!eeconfig_is_enabled()) {
+        dprintf("rgblight_init eeconfig is not enabled.\n");
+        eeconfig_init();
+        eeconfig_write_rgblight_default();
+    }
+#endif
     rgblight_config.raw = eeconfig_read_rgblight();
     if (rgblight_config.val == 0) rgblight_config.val = 127;
 

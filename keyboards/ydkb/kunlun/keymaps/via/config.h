@@ -16,5 +16,5 @@
   //Keymap specific config.h
 #pragma once
 #undef  FW_VER
-#define FW_VER          VIA_DM3U
+#define FW_VER          VIA_DMB9
 #define DYNAMIC_KEYMAP_LAYER_COUNT 4
