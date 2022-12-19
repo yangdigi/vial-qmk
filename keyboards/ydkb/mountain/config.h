@@ -4,10 +4,12 @@
 
 /* USB Device descriptor parameter */
 #define FW_VER          QMK_DM3T
+#define FW_VER_VIA      VIA_DMCF
+#define FW_VER_VIAL     VIAL_DMCF
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2163  
 #define DEVICE_VER      0x0001
-#define MANUFACTURER    YDKB
+#define MANUFACTURER    YDKB_KBDFans
 #define PRODUCT         Mountain (FW_VER)
 
 /* key matrix size */
