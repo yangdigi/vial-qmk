@@ -6,8 +6,8 @@
 #include "ble51.h"
 #include "bootloader.h"
 #include "quantum.h"
-#include "send_string.h"
-#include "keycode_config.h"
+#include "send_string.h"  //qmk
+#include "keycode_config.h" //qmk
 
 
 // for lock mode, *debounce + x

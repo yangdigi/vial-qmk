@@ -4,7 +4,8 @@
 
 /* USB Device descriptor parameter */
 #define FW_VER          QMK_DMC8
-#define FW_VER_VIA      VIA_DMC8
+#define FW_VER_VIA      VIA_DMCJ
+#define FW_VER_VIAL     VIAL_DMCJ
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2162 
 #define DEVICE_VER      0x0001
@@ -79,6 +80,7 @@
 #define BATTERY_CHARGING (~PINC & (1<<6))
 #define CHARGING_FIX_VALUE 40
 #define CHARGING_STATE_INIT()    do { DDRC &= ~(1<<6); PORTC |= (1<<6);} while(0)
+#define HARDWARE_BT_SWITCH
 
 /*
  * Feature disable options

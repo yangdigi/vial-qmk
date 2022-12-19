@@ -118,7 +118,7 @@ void rgblight_mode(int8_t mode)
 
     eeconfig_write_rgblight(rgblight_config.raw);
     dprintf("rgblight mode: %u\n", rgblight_config.mode);
-    if (rgblight_config.mode > 0) {
+    if (rgblight_config.enable) {
         rgblight_timer_enable();
     }
     rgblight_sethsv(rgblight_config.hue, rgblight_config.sat, rgblight_config.val);

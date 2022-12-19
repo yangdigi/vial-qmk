@@ -72,7 +72,12 @@ static const uint8_t battery_level_value[9] = {U8V(4050), U8V(3950), U8V(3900), 
 uint8_t battery_calc_u8 = 0;
 uint16_t battery_voltage = 3699;
 uint8_t battery_check_timer = 0;
+
+#ifdef HARDWARE_BT_SWITCH
+uint8_t battery_percentage = 120; // default 120 for ble51_boot_off.
+#else
 uint8_t battery_percentage = 12; // default 12 for ble51_boot_off.
+#endif
 
 uint8_t ble_set_code = 0;
 
