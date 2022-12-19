@@ -5,10 +5,11 @@
 /* USB Device descriptor parameter */
 #define FW_VER          QMK_DMC8
 #define FW_VER_VIA      VIA_DMC8
+#define FW_VER_VIAL     VIAL_DMCF
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2167  
 #define DEVICE_VER      0x0011
-#define MANUFACTURER    YDKB
+#define MANUFACTURER    YDKB_KBDFans
 #define PRODUCT         YD67BLE (FW_VER)
 
 

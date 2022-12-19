@@ -130,7 +130,8 @@ static void matrix_scan_ver595(void) {
             uint8_t key = get_key(real_col);
             if (real_col >= 8) select_row(11);
             *debounce = (*debounce >> 1) | key;
-            if ((*debounce > 0) && (*debounce < 255) && (BLE51_PowerState < 4)) {
+            if (1) {
+            //if ((*debounce > 0) && (*debounce < 255) && (BLE51_PowerState < 4)) {
                 uint8_t row_trans = row;
                 uint8_t col_trans = real_col;
                 if (row >= 2) {
@@ -169,13 +170,14 @@ static void matrix_scan_ver11(void) {
         for (uint8_t col=0; col<matrix_cols(); col++, *debounce_v11++) {
             uint8_t key = get_key(col);
             *debounce_v11 = (*debounce_v11 >> 1) | key;
-            if ((*debounce_v11 > 0) && (*debounce_v11 < 0xff) && (BLE51_PowerState < 4))  {
-                matrix_row_t row_prev = matrix_v11[row]; 
+            if (1) {
+            //if ((*debounce_v11 > 0) && (*debounce_v11 < 0xff) && (BLE51_PowerState < 4))  {
+                matrix_row_t row_prev = matrix_v11[row]; //save prev value of this row
                 matrix_row_t *p_row = &matrix_v11[row];
                 matrix_row_t col_mask = ((matrix_row_t)1 << col);
-                if        (*debounce_v11 >= DEBOUNCE_DN_MASK) {
+                if        (*debounce_v11 >= DEBOUNCE_DN_MASK) {  //debounce KEY DOWN 
                     *p_row |=  col_mask;
-                } else if (*debounce_v11 <= DEBOUNCE_UP_MASK) {
+                } else if (*debounce_v11 <= DEBOUNCE_UP_MASK) { //debounce KEY UP
                     *p_row &= ~col_mask;
                 } 
                 if (*p_row != row_prev) {
@@ -183,7 +185,8 @@ static void matrix_scan_ver11(void) {
                 }                    
             }
         }
-        if (matrix_v11[row] > 0) {
+        //if key pressed, update kb_idle_times
+        if (matrix[row] > 0) {
             kb_idle_times = 0; 
         }
         unselect_rows();
@@ -251,6 +254,7 @@ static void init_cols(void)
         PORTB |=  0xff;
     }
     unselect_rows();
+    //_delay_us(12);
 }
 
 
@@ -354,10 +358,12 @@ bool suspend_wakeup_condition(void)
 void suspend_power_down_action(void)
 {
     PORTC &= ~(1<<6);  //caps led off
+    #if 0
     if (BLE51_PowerState >= 10) {
         memset(matrix, 0, sizeof matrix);
         memset(matrix_v11, 0, sizeof matrix_v11);
     }
+    #endif
 }
 
 void suspend_wakeup_init_action(void)
