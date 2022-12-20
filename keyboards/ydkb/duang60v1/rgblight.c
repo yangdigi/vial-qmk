@@ -18,7 +18,8 @@
 #define rgblight_timer_disable() do { PORTD |= (1<<1);} while(0)
 #define rgblight_timer_enabled (~PORTD & (1<<1))
 #define RGBLED_TEMP  RGBLED_NUM
-const uint8_t RGBLED_BREATHING_TABLE[128] PROGMEM = {0,0,0,0,1,1,1,2,2,3,4,5,5,6,7,9,10,11,12,14,15,17,18,20,21,23,25,27,29,31,33,35,37,40,42,44,47,49,52,54,57,59,62,65,67,70,73,76,79,82,85,88,90,93,97,100,103,106,109,112,115,118,121,124,127,131,134,137,140,143,146,149,152,155,158,162,165,167,170,173,176,179,182,185,188,190,193,196,198,201,203,206,208,211,213,215,218,220,222,224,226,228,230,232,234,235,237,238,240,241,243,244,245,246,248,249,250,250,251,252,253,253,254,254,254,255,255,255};
+//const uint8_t RGBLED_BREATHING_TABLE[128] PROGMEM= {0,0,0,0,1,1,1,2,2,3,4,5,5,6,7,9,10,11,12,14,15,17,18,20,21,23,25,27,29,31,33,35,37,40,42,44,47,49,52,54,57,59,62,65,67,70,73,76,79,82,85,88,90,93,97,100,103,106,109,112,115,118,121,124,127,131,134,137,140,143,146,149,152,155,158,162,165,167,170,173,176,179,182,185,188,190,193,196,198,201,203,206,208,211,213,215,218,220,222,224,226,228,230,232,234,235,237,238,240,241,243,244,245,246,248,249,250,250,251,252,253,253,254,254,254,255,255,255};
+const uint8_t RGBLED_BREATHING_TABLE[64] PROGMEM= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 17, 20, 24, 28, 32, 36, 41, 46, 51, 57, 63, 70, 76, 83, 91, 98, 106, 113, 121, 129, 138, 146, 154, 162, 170, 178, 185, 193, 200, 207, 213, 220, 225, 231, 235, 240, 244, 247, 250, 252, 253, 254, 255};
 
 //battery
 extern bool no_rgblight;
@@ -85,7 +86,13 @@ void eeconfig_debug_rgblight(void) {
 void rgblight_init(void)
 {
     dprintf("rgblight_init start!\n");
-    eeconfig_write_rgblight_default();
+#if 0
+    if (!eeconfig_is_enabled()) {
+        dprintf("rgblight_init eeconfig is not enabled.\n");
+        eeconfig_init();
+        eeconfig_write_rgblight_default();
+    }
+#endif
     rgblight_config.raw = eeconfig_read_rgblight();
     if (rgblight_config.val == 0) rgblight_config.val = 127;
 
@@ -93,29 +100,28 @@ void rgblight_init(void)
 
     rgblight_timer_init(); // setup the timer
 
-    if (rgblight_config.enable) {
-        rgblight_mode(rgblight_config.mode);
-    } else {
-        rgblight_set();
-        rgblight_timer_disable();
-    }
+    rgblight_mode(rgblight_config.mode);
 }
 
 
 void rgblight_mode(int8_t mode)
 {
+    // rgb off
     if (!rgblight_config.enable) {
-        return;
-    }
-    if (mode < 0) mode = RGBLIGHT_MODES -1;
-    else if (mode >= RGBLIGHT_MODES) mode = 0;
-    rgblight_config.mode = mode;
+        //rgblight_clear();
+        //rgblight_set();
+        rgblight_timer_disable();
+    } else {
+    // rgb on
+        if (mode < 0) mode = RGBLIGHT_MODES - 1;
+        else if (mode >= RGBLIGHT_MODES) mode = 0;
+        rgblight_config.mode = mode;
+        dprintf("rgblight mode: %u\n", rgblight_config.mode);
 
-    eeconfig_write_rgblight(rgblight_config.raw);
-    dprintf("rgblight mode: %u\n", rgblight_config.mode);
-    if (rgblight_config.mode > 0) {
         rgblight_timer_enable();
     }
+    // save config
+    eeconfig_write_rgblight(rgblight_config.raw);
     rgblight_sethsv(rgblight_config.hue, rgblight_config.sat, rgblight_config.val);
 }
 
@@ -123,17 +129,8 @@ inline
 void rgblight_toggle(void)
 {
     rgblight_config.enable ^= 1;
-    eeconfig_write_rgblight(rgblight_config.raw);
     dprintf("rgblight toggle: rgblight_config.enable = %u\n", rgblight_config.enable);
-    if (rgblight_config.enable) {
-        rgblight_mode(rgblight_config.mode);
-    } else {
-        rgblight_clear();
-        rgblight_set();
-        if (USB_DeviceState != DEVICE_STATE_Configured) {
-            rgblight_timer_disable();
-        }
-    }
+    rgblight_mode(rgblight_config.mode);
 }
 
 
@@ -232,7 +229,9 @@ void rgblight_set(void)
 inline
 void rgblight_task(void)
 {
-    if (rgblight_config.enable && rgblight_timer_enabled) {
+    //if (rgblight_config.enable && rgblight_timer_enabled) {
+    if (rgblight_timer_enabled) {
+      if (rgblight_config.enable && !low_battery) {
         // Mode = 1, static light, do nothing here
         switch (rgblight_config.mode+1) {
             case 1:
@@ -247,13 +246,20 @@ void rgblight_task(void)
             case 9 ... 14:
                 rgblight_effect_rainbow_swirl(rgblight_config.mode-6);
                 break;
+            #if RGBLIGHT_MODES > 15
             case 15 ... 20:
                 rgblight_effect_snake(rgblight_config.mode-13);
                 break;
+            #endif
+            #if RGBLIGHT_MODES > 21
             case 21 ... 23:
                 rgblight_effect_knight(rgblight_config.mode-19);
                 break;
+            #endif
         }
+      } else {
+        rgblight_timer_disable();
+      }
     }
 }
 
@@ -264,7 +270,8 @@ void rgblight_effect_breathing(uint8_t interval)
     static int8_t increament = 1;
     rgblight_sethsv_noeeprom(rgblight_config.hue, rgblight_config.sat, pgm_read_byte(&RGBLED_BREATHING_TABLE[pos]));
     pos = pos + interval*increament;
-    if (pos < interval || pos+interval > 126) {
+    if (pos < interval || pos+interval > 62) {
+    //if (pos < interval || pos+interval > 126) {
         increament *= -1;
     }
 }
@@ -293,6 +300,8 @@ void rgblight_effect_rainbow_swirl(uint8_t interval)
         current_hue = (current_hue + 768 - interval2*16) % 768;
     }
 }
+
+#if RGBLIGHT_MODES > 15
 void rgblight_effect_snake(uint8_t interval)
 {
     static int8_t pos = 0 - RGBLIGHT_EFFECT_SNAKE_LENGTH;
@@ -313,7 +322,9 @@ void rgblight_effect_snake(uint8_t interval)
         rgblight_set();
     }
 }
+#endif
 
+#if RGBLIGHT_MODES > 21
 void rgblight_effect_knight(uint8_t interval)
 {
     static int8_t pos = RGBLED_NUM - 1;
@@ -341,6 +352,7 @@ void rgblight_effect_knight(uint8_t interval)
         }
     }
 }
+#endif
 
 void suspend_power_down_action(void)
 {
@@ -362,9 +374,7 @@ void hook_keyboard_loop()
     static uint16_t rgb_update_timer = 0;
     if (rgblight_timer_enabled && timer_elapsed(rgb_update_timer) > 40) {
         rgb_update_timer = timer_read();
-        if (!low_battery) {
-           if (!display_connection_status_check_times || !ble51_boot_on) rgblight_task();
-        }
+        if (!display_connection_status_check_times || !ble51_boot_on) rgblight_task();
     }
 }
 

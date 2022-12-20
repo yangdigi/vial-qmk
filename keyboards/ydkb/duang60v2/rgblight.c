@@ -242,7 +242,9 @@ void rgblight_task(void)
         rgblight_timer_disable();
         rgblight_config.enable = 0;
     }
-    if (rgblight_config.enable && rgblight_timer_enabled) {
+    //if (rgblight_config.enable && rgblight_timer_enabled) {
+    if (rgblight_timer_enabled) {
+      if (rgblight_config.enable && !low_battery) {
         // Mode = 1, static light, do nothing here
         switch (rgblight_config.mode+1) {
             case 1:
@@ -264,6 +266,9 @@ void rgblight_task(void)
                 rgblight_effect_knight(rgblight_config.mode-19);
                 break;
         }
+      } else {
+        rgblight_timer_disable();
+      }
     }
 }
 
@@ -369,9 +374,7 @@ void hook_keyboard_loop()
     static uint16_t rgb_update_timer = 0;
     if (rgblight_timer_enabled && timer_elapsed(rgb_update_timer) > 40) {
         rgb_update_timer = timer_read();
-        if (!low_battery) {
-           if (!display_connection_status_check_times || !ble51_boot_on) rgblight_task();
-        }
+        if (!display_connection_status_check_times || !ble51_boot_on) rgblight_task();
     }
 }
 

@@ -51,7 +51,7 @@ void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
             case USER03: //LOCK MODE
                 command_extra(KC_L); 
                 break;
-            case USER04 ... USER11:
+            case USER04 ... USER12:
                 rgblight_action(keycode - USER04);
                 break;
         }

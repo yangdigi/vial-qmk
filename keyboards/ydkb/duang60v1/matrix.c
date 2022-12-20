@@ -116,7 +116,8 @@ uint8_t matrix_scan(void)
 
             if (real_col >= 8) select_key(1);
             
-            if ((*debounce > 0) && (*debounce < 255)) {
+            //if ((*debounce > 0) && (*debounce < 255)) {
+            if (1) {
                 matrix_row_t *p_row = &matrix[row];
                 matrix_row_t col_mask = ((matrix_row_t)1 << real_col);
                 if        (*debounce >= DEBOUNCE_DN_MASK) {
@@ -260,7 +261,7 @@ bool suspend_wakeup_condition(void)
                 CLOCK_PULSE();
                 DS_PL_HI();
             }
-            _delay_us(5);
+            _delay_us(6);
             uint8_t encoder_state_0 = PINF&(1<<PF0) ? 0 : 1;
             uint8_t encoder_state_1 = PINF&(1<<PF1) ? 0 : 1;
             if (encoder_state_0 != encoder_state_prev[0][i] || encoder_state_1 != encoder_state_prev[1][i]) {
