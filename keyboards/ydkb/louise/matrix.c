@@ -24,7 +24,6 @@
 #define DEBOUNCE_UP_MASK (uint8_t)(0x80 >> 5)
 
 bool is_ble_version = 1;
-bool no_rgblight;
 
 extern rgblight_config_t rgblight_config;
 static matrix_row_t matrix[MATRIX_ROWS] = {0};
@@ -79,7 +78,7 @@ void hook_early_init()
         DDRE  &= ~(1<<PE2);
         PORTE |=  (1<<PE2);
         _delay_ms(2);
-        if (!(PINE&(1<<PE2))) ble51_boot_on = 0;
+        if (~PINE & (1<<PE2)) ble51_boot_on = 0;
         //BLE Reset
         if (ble_reset_key == 0xBBAA) {
             ble_reset_key = 0;
@@ -88,7 +87,7 @@ void hook_early_init()
                 DDRF  |=  (1<<PF7);
                 PORTF &= ~(1<<PF7);
                 bt_power_init();
-                // light CapsLED
+                // light LED
                 DDRE  |= (1<<PE6);
                 PORTE |= (1<<PE6);
                 DDRB  |= (1<<PB2);
@@ -133,7 +132,8 @@ uint8_t matrix_scan(void)
 
             if (real_col >= 8) select_key(1);
             
-            if ((*debounce > 0) && (*debounce < 255)) {
+            //if ((*debounce > 0) && (*debounce < 255)) {
+            if (1) {
                 matrix_row_t *p_row = &matrix[row];
                 matrix_row_t col_mask = ((matrix_row_t)1 << real_col);
                 if        (*debounce >= DEBOUNCE_DN_MASK) {
@@ -168,10 +168,10 @@ matrix_row_t matrix_get_row(uint8_t row)
 
 void matrix_print(void)
 {
-    print("\nr/c 01234567\n");
+    print("\nr/c 0123456789ABCDEF\n");
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         print_hex8(row); print(": ");
-        print_bin_reverse8(matrix_get_row(row));
+        print_bin_reverse16(matrix_get_row(row));
         print("\n");
     }
 }
@@ -229,7 +229,7 @@ bool suspend_wakeup_condition(void)
 {
     if (BLE51_PowerState >= 10) {  //lock mode  
         matrix_scan();
-        // Key1_S14 F£¬  real debounce p is 1*16+4*2
+        // Key1_S14 F,   real debounce p is 1*16+4*2
         // Key2_K14 J,   real debounce p is 1*16+4*2+1
         uint8_t *debounce = &matrix_debouncing[0][0];
         uint8_t matrix_keys_down = 0;
@@ -246,7 +246,7 @@ bool suspend_wakeup_condition(void)
         //check all keys
         select_key_ready();
         DS_PL_LO();
-        for (uint8_t i = 0; i < 32; i++) {
+        for (uint8_t i = 0; i < MATRIX_ROWS * MATRIX_COLS / 2; i++) {
             CLOCK_PULSE();
         }
         get_key_ready();

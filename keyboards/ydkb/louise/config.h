@@ -3,8 +3,9 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DM4K
-#define FW_VER_VIA      VIA_DM4K
+#define FW_VER          QMK_DM6T
+#define FW_VER_VIA      VIA_DMCG
+#define FW_VER_VIAL     VIAL_DMCG
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2141
 #define DEVICE_VER      0x0001
@@ -81,6 +82,7 @@
 #define BATTERY_CHARGING (~PINC & (1<<7))
 #define CHARGING_FIX_VALUE 40
 #define CHARGING_STATE_INIT()    do { DDRC &= ~(1<<7); PORTC |= (1<<7);} while(0)
+#define HARDWARE_BT_SWITCH
 
 /*
  * Feature disable options

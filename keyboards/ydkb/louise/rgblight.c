@@ -85,7 +85,13 @@ void eeconfig_debug_rgblight(void) {
 void rgblight_init(void)
 {
     dprintf("rgblight_init start!\n");
-    eeconfig_write_rgblight_default();
+#if 0
+    if (!eeconfig_is_enabled()) {
+        dprintf("rgblight_init eeconfig is not enabled.\n");
+        eeconfig_init();
+        eeconfig_write_rgblight_default();
+    }
+#endif
     rgblight_config.raw = eeconfig_read_rgblight();
     if (rgblight_config.val == 0) rgblight_config.val = 127;
 
@@ -107,13 +113,13 @@ void rgblight_mode(int8_t mode)
     if (!rgblight_config.enable) {
         return;
     }
-    if (mode < 0) mode = RGBLIGHT_MODES -1;
+    if (mode < 0) mode = RGBLIGHT_MODES - 1;
     else if (mode >= RGBLIGHT_MODES) mode = 0;
     rgblight_config.mode = mode;
 
     eeconfig_write_rgblight(rgblight_config.raw);
     dprintf("rgblight mode: %u\n", rgblight_config.mode);
-    if (rgblight_config.mode > 0) {
+    if (rgblight_config.enable) {
         rgblight_timer_enable();
     }
     rgblight_sethsv(rgblight_config.hue, rgblight_config.sat, rgblight_config.val);
@@ -232,10 +238,6 @@ void rgblight_set(void)
 inline
 void rgblight_task(void)
 {
-    if (no_rgblight) {
-        rgblight_timer_disable();
-        rgblight_config.enable = 0;
-    }
     if (rgblight_config.enable && rgblight_timer_enabled) {
         // Mode = 1, static light, do nothing here
         switch (rgblight_config.mode+1) {
@@ -251,12 +253,16 @@ void rgblight_task(void)
             case 9 ... 14:
                 rgblight_effect_rainbow_swirl(rgblight_config.mode-6);
                 break;
+            #if RGBLIGHT_MODES > 15
             case 15 ... 20:
                 rgblight_effect_snake(rgblight_config.mode-13);
                 break;
+            #endif
+            #if RGBLIGHT_MODES > 21
             case 21 ... 23:
                 rgblight_effect_knight(rgblight_config.mode-19);
                 break;
+            #endif
         }
     }
 }
@@ -297,6 +303,8 @@ void rgblight_effect_rainbow_swirl(uint8_t interval)
         current_hue = (current_hue + 768 - interval2*16) % 768;
     }
 }
+
+#if RGBLIGHT_MODES > 15
 void rgblight_effect_snake(uint8_t interval)
 {
     static int8_t pos = 0 - RGBLIGHT_EFFECT_SNAKE_LENGTH;
@@ -317,7 +325,9 @@ void rgblight_effect_snake(uint8_t interval)
         rgblight_set();
     }
 }
+#endif
 
+#if RGBLIGHT_MODES > 21
 void rgblight_effect_knight(uint8_t interval)
 {
     static int8_t pos = RGBLED_NUM - 1;
@@ -345,6 +355,7 @@ void rgblight_effect_knight(uint8_t interval)
         }
     }
 }
+#endif
 
 void suspend_power_down_action(void)
 {
