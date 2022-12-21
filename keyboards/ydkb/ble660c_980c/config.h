@@ -5,7 +5,7 @@
 /* USB Device descriptor parameter */
 #define FW_VER          QMK_DM4S
 #define FW_VER_VIA      VIA_DM4S
-
+#define FW_VER_VIAL     VIAL_DMCL
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x19C1
 #define DEVICE_VER      0x0001

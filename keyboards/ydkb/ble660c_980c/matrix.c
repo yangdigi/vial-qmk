@@ -202,7 +202,12 @@ uint8_t matrix_scan(void)
     }
 
     if (BLE51_PowerState >= 10) { 
+        //after a whole scan, check F and J when LOCK MODE
+        // 980c, matrix[2,11] is F, matrix[2,12] is J
+        // 660c, matrix[4,4] is F, matrix[4,5] is J
         if (matrix_keys_down == 2) { // only two keys down.
+
+            //if (matrix[2] == (1<<12 | 1<<11) || matrix[4]  == (1<<5 | 1<<4)) {
             if (matrix[2] == (1<<12 | 1<<11)) {
                 return 100;
             }

@@ -16,6 +16,10 @@
 
 extern bool is_ver_jp;
 
+//add to row7 and row8
+// 7                                                           UM_CAPS, }
+// 8 { UM_HOME,UM_APP, UM_END, UM_RCTL,UM_LEFT,UM_DOWN,UM_UP,  UM_RGHT, }
+
 // transform jp matrix to us.
 static const uint8_t matrix_trans[16][5] = {
     { 0x31, 0x32, 0x80, 0x34, 0x77 },

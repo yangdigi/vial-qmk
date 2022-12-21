@@ -207,7 +207,11 @@ uint8_t matrix_scan(void)
     }
 
     if (BLE51_PowerState >= 10) { 
-        if (matrix_keys_down == 2) {
+        //after a whole scan, check F and J when LOCK MODE
+        // jp version, matrix[5,6] is F, matrix[9,6] is J.
+        // already tran jp matrix to us.
+        //us version, matrix[1,5] is J, matrix[4,5] is F.
+        if (matrix_keys_down == 2) { // only two keys down.
             if (matrix[1]  == (1<<5) && matrix[4] == (1<<5)) {
                 return 100;
             }
