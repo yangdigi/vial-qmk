@@ -3,9 +3,9 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DM6T
-#define FW_VER_VIA      VIA_DMCG
-#define FW_VER_VIAL     VIAL_DMCG
+#define FW_VER          QMK_DMCM
+#define FW_VER_VIA      VIA_DMCM
+#define FW_VER_VIAL     VIAL_DMCM
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2141
 #define DEVICE_VER      0x0001
@@ -24,8 +24,8 @@
 #define IGNORE_MOD_TAP_INTERRUPT // this makes it possible to do rolling combos (zx) with keys that convert to other keys on hold (z becomes ctrl when you hold it, and when this option isn't enabled, z rapidly followed by x actually sends Ctrl-x. That's bad.)
 
 #define BACKLIGHT_PIN C6
-#define BACKLIGHT_BREATHING
-#define BACKLIGHT_LEVELS 3
+#define BACKLIGHT_LEVELS 6
+#define BACKLIGHT_ON_STATE 0
 
 /* key combination for command */
 #define IS_COMMAND() ( \
