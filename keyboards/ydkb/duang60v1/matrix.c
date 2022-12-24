@@ -72,7 +72,6 @@ void hook_early_init()
         if (~PINE & (1<<2)) ble51_boot_on = 0;
         //BLE Reset
         if (ble_reset_key == 0xBBAA) {
-            ble_reset_key = 0;
             if (ble51_boot_on) {
                 // PE6 for BLE Reset
                 DDRE  |=  (1<<6);
