@@ -3,9 +3,9 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DMC8
-#define FW_VER_VIA      VIA_DMC8
-#define FW_VER_VIAL     VIAL_DMCF
+#define FW_VER          QMK_DN17
+#define FW_VER_VIA      VIA_DN17
+#define FW_VER_VIAL     VIAL_DN17
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2167  
 #define DEVICE_VER      0x0011
@@ -13,14 +13,13 @@
 #define PRODUCT         YD67BLE (FW_VER)
 
 
-#define MATRIX_ROWS 5  //595 num of each side.
+#define MATRIX_ROWS 5
 #define MATRIX_COLS 16
 
 
 
 #define TAPPING_TOGGLE  2
 
-#define TAPPING_TERM    200
 #define IGNORE_MOD_TAP_INTERRUPT // this makes it possible to do rolling combos (zx) with keys that convert to other keys on hold (z becomes ctrl when you hold it, and when this option isn't enabled, z rapidly followed by x actually sends Ctrl-x. That's bad.)
 
 
@@ -63,7 +62,7 @@
 #define BT_POWERED    (~PORTF & (1<<7))
 #define bt_power_init()    do { DDRF |= (1<<7); PORTF &= ~(1<<7);} while(0)
 #define turn_off_bt()    do { PORTF |= (1<<7); UCSR1B &= ~(1<<TXEN1); } while(0)
-#define turn_on_bt()    do { PORTF &= ~(1<<7); UCSR1B |= (1<<TXEN1);} while(0)
+#define turn_on_bt()    do { PORTF &= ~(1<<7); if (~UCSR1B & (1<<TXEN1)) _delay_ms(200); UCSR1B |= (1<<TXEN1); } while(0)
 
 #define BLE_NAME "YD67BLE"
 #define BLE_BATTERY_SERVICE
