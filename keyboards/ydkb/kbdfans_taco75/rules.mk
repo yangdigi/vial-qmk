@@ -4,9 +4,11 @@ SRC ?=	matrix.c \
 
 # MCU name
 MCU = STM32F103
+BOARD = MAPLEMINI_STM32_F103
 
 # Bootloader selection
-BOOTLOADER = stm32duino
+MCU_LDSCRIPT = STM32F103CBT6_uf2_bootloader
+BOOTLOADER = custom
 
 # Build Options
 #   change yes to no to disable
@@ -25,7 +27,6 @@ AUDIO_ENABLE = no           # Audio output
 SLEEP_LED_ENABLE = no
 
 
-DEFAULT_FOLDER = ydkb/kbdfans_taco75
 
 
 # Enter lower-power sleep mode when on the ChibiOS idle thread
