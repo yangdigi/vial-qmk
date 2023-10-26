@@ -13,8 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
+#define CH_CFG_ST_TIMEDELTA 0
 
-#include_next <halconf.h>
+#define CH_CFG_USE_CONDVARS_TIMEOUT FALSE
+
+#include_next <chconf.h>

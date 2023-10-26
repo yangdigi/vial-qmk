@@ -4,18 +4,18 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DN7K
-#define FW_VER_VIA      VIA_DN7K
-#define FW_VER_VIAL     VIAL_DN7K
-#define VENDOR_ID       0x9D5B 
-#define PRODUCT_ID      0x2301 
+#define FW_VER          QMK_DN9J
+#define FW_VER_VIA      VIA_DN9J
+#define FW_VER_VIAL     VIAL_DN9J
+#define VENDOR_ID       0x9D5B
+#define PRODUCT_ID      0x2303
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    YDKB_KBDFans
-#define PRODUCT         Taco75 Keyboard (FW_VER)
+#define PRODUCT         KBD8x MkIII Keyboard (FW_VER)
 
 #define USB_MAX_POWER_CONSUMPTION 350
 
-#define MATRIX_ROWS 11
+#define MATRIX_ROWS 12  //595
 #define MATRIX_COLS 8
 
 
@@ -30,10 +30,10 @@
 #define RGBLIGHT_EFFECT_ALTERNATING
 #define RGBLIGHT_EFFECT_TWINKLE
 
-#define RGBLIGHT_LIMIT_VAL 192
+#define RGBLIGHT_LIMIT_VAL 50
 #define RGBLIGHT_SLEEP
 #define RGB_DI_PIN B15
-#define RGBLED_NUM 14
+#define RGBLED_NUM 4
 
 //#define SUSPEND_ACTION
 
