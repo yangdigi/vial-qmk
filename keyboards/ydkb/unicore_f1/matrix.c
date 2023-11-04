@@ -125,7 +125,7 @@ uint8_t matrix_scan(void)
         }
     }
 
-    // When KEY and GND is connected wrongly, all the keys may be down.
+    // to avoid all the keys being down in some cases like KEY is connected to GND.
     if (matrix_keys_down == MATRIX_ROWS * MATRIX_COLS) {
         memset(matrix, 0, sizeof(matrix));
     }
