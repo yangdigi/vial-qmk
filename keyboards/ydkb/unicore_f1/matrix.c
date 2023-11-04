@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * scan matrix
  */
 #include "action.h"
-#include "host.h"
 #include "print.h"
 #include "debug.h"
 #include "timer.h"
@@ -82,7 +81,7 @@ uint8_t matrix_scan(void)
         test = 0;
     }
 #endif
-    matrix_scan_quantum();
+    matrix_scan_quantum(); // use this to run hook_keyboard_loop()
 
     if (matrix_idle) {
         if (get_key() == 0) return 1;
@@ -99,11 +98,11 @@ uint8_t matrix_scan(void)
     }
 
     select_key(0);
-    uint8_t *debounce = &matrix_debouncing[0][0];
-    uint8_t *double_click_fix = &matrix_double_click_fix[0][0];
-    uint8_t matrix_up_keys = MATRIX_ROWS * MATRIX_COLS;
+    uint8_t matrix_keys_down = MATRIX_ROWS * MATRIX_COLS;
     for (uint8_t row=0; row<MATRIX_ROWS; row++) {
-        for (uint8_t col=0; col<MATRIX_COLS; col++, *debounce++, *double_click_fix++) {
+        for (uint8_t col=0; col<MATRIX_COLS; col++) {
+            uint8_t *debounce = &matrix_debouncing[row][col];
+            uint8_t *double_click_fix = &matrix_double_click_fix[row][col];
             uint8_t key = get_key();
             *debounce = (*debounce >> 1) | key;
             //select next key
@@ -119,14 +118,20 @@ uint8_t matrix_scan(void)
                         *double_click_fix = DOUBLE_CLICK_FIX_DELAY; 
                     } else if (*debounce < DEBOUNCE_UP_MASK) { //debounce KEY UP
                         *p_row &= ~col_mask;
-                        matrix_up_keys--;
+                        matrix_keys_down--;
                     }
                 }
             }
         }
     }
 
-    if (matrix_up_keys == 0) {
+    // When KEY and GND is connected wrongly, all the keys may be down.
+    if (matrix_keys_down == MATRIX_ROWS * MATRIX_COLS) {
+        memset(matrix, 0, sizeof(matrix));
+    }
+
+    // no key down, set matrix_idle.
+    if (matrix_keys_down == 0) {
         select_all_keys();
         matrix_idle = true;
     } else {

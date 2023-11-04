@@ -49,6 +49,9 @@ void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
 #ifdef INDICATOR_1_FUNCT
     if (indicator_state & (1<<1)) {
         rgbled[1] = INDICATOR_1_COLOR;
+        #ifdef INDICATOR_1_INSTRIP
+        start_led[INDICATOR_1_INSTRIP] = INDICATOR_1_COLOR;
+        #endif
     } else {
         rgbled[1] = RGBLIGHT_COLOR_OFF;
     }
@@ -71,7 +74,7 @@ void led_set_user(uint8_t usb_led)
         indicator_state |= (1<<1);
     }
 #endif
-    rgblight_set();
+    rgblight_set(); //set rgb even when rgblight.enable=0
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -124,9 +127,10 @@ bool command_extra(uint8_t code)
             }
             //soft reset
             NVIC_SystemReset();
+            //*(uint32_t *)(0xE000ED0CUL) = 0x05FA0000UL | (*(uint32_t *)(0xE000ED0CUL) & 0x0700) | 0x04;
             break;
         default:
-            return false;
+            return false;   // yield to default command
     }
     return true;
 }
