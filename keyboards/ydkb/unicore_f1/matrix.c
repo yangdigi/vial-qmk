@@ -68,6 +68,11 @@ void matrix_init(void)
     init_cols();
 }
 
+//for qmk
+static bool prevent_key_press = 0;
+bool should_process_keypress(void) {
+    return is_keyboard_master();
+}
 
 uint8_t matrix_scan(void)
 {
@@ -126,9 +131,7 @@ uint8_t matrix_scan(void)
     }
 
     // to avoid all the keys being down in some cases like KEY is connected to GND.
-    if (matrix_keys_down == MATRIX_ROWS * MATRIX_COLS) {
-        memset(matrix, 0, sizeof(matrix));
-    }
+    prevent_key_press = (matrix_keys_down == MATRIX_ROWS * MATRIX_COLS);
 
     // no key down, set matrix_idle.
     if (matrix_keys_down == 0) {

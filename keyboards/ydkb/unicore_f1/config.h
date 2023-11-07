@@ -4,7 +4,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          DNB4
+#define FW_VER          DNB7
 #define VENDOR_ID       0x9D5B
 #define PRODUCT_ID      0x23FA
 #define DEVICE_VER      0x0001
