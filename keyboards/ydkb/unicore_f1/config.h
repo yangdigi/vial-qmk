@@ -4,7 +4,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          DNB7
+#define FW_VER          DNB8
 #define VENDOR_ID       0x9D5B
 #define PRODUCT_ID      0x23FA
 #define DEVICE_VER      0x0001
@@ -13,9 +13,11 @@
 
 #define USB_MAX_POWER_CONSUMPTION 350
 
+/* key matrix size */
 #define MATRIX_ROWS 14 //max supported
 #define MATRIX_COLS 8
 #define FORCE_NKRO
+#define SOFTWARE_ESC_BOOTLOADER
 
 #define RGBLIGHT_EFFECT_BREATHING
 #define RGBLIGHT_EFFECT_RAINBOW_MOOD

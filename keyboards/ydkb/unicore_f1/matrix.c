@@ -55,7 +55,8 @@ __attribute__ ((weak))
 void matrix_scan_user(void) {}
 
 __attribute__ ((weak))
-void matrix_scan_kb(void) {
+void matrix_scan_kb(void)
+{
     matrix_scan_user();
     hook_keyboard_loop();
 }
@@ -75,16 +76,6 @@ bool should_process_keypress(void) {
 
 uint8_t matrix_scan(void)
 {
-#if 0
-    static uint32_t test=0;
-    static uint16_t test_timestamp = 0;
-    test++;
-    if (timer_read() != test_timestamp && timer_elapsed(test_timestamp) >= 1000) {
-        test_timestamp = timer_read();
-        xprintf("speed:%d\n",test);
-        test = 0;
-    }
-#endif
     matrix_scan_quantum(); // use this to run hook_keyboard_loop()
 
     if (matrix_idle) {
@@ -102,11 +93,12 @@ uint8_t matrix_scan(void)
     }
 
     select_key(0);
-    uint8_t matrix_keys_down = MATRIX_ROWS * MATRIX_COLS;
+    uint8_t matrix_keys_idle = 0;
     for (uint8_t row=0; row<MATRIX_ROWS; row++) {
         for (uint8_t col=0; col<MATRIX_COLS; col++) {
             uint8_t *debounce = &matrix_debouncing[row][col];
             uint8_t *double_click_fix = &matrix_double_click_fix[row][col];
+
             uint8_t key = get_key();
             *debounce = (*debounce >> 1) | key;
             //select next key
@@ -122,7 +114,7 @@ uint8_t matrix_scan(void)
                         *double_click_fix = DOUBLE_CLICK_FIX_DELAY; 
                     } else if (*debounce < DEBOUNCE_UP_MASK) { //debounce KEY UP
                         *p_row &= ~col_mask;
-                        matrix_keys_down--;
+                        matrix_keys_idle++;
                     }
                 }
             }
@@ -130,10 +122,10 @@ uint8_t matrix_scan(void)
     }
 
     // to avoid all the keys being down in some cases like KEY is connected to GND.
-    process_key_press = (matrix_keys_down < MATRIX_ROWS * MATRIX_COLS);
+    process_key_press = (matrix_keys_idle > 0);
 
     // no key down, set matrix_idle.
-    if (matrix_keys_down == 0) {
+    if (matrix_keys_idle == MATRIX_ROWS * MATRIX_COLS) {
         select_all_keys();
         matrix_idle = true;
     } else {
@@ -211,16 +203,28 @@ static void select_key(uint8_t mode)
     get_key_ready();
 }
 
-void bootmagic_lite(void) {
+void bootmagic_lite(void)
+{
+#ifdef SOFTWARE_ESC_BOOTLOADER
     wait_ms(200);
     matrix_scan();
-    wait_ms(10);
     matrix_scan();
+    // only the first key(esc) is pressed
+    uint16_t boot_key = matrix_get_row(0);
+    if (boot_key == 1) {  // only top left
+        uint8_t row = MATRIX_ROWS;
+        while (row-- > 1) boot_key += matrix_get_row(row);
+        if (boot_key == 1) enter_bootloader();
+    }
+#endif
+}
 
-    if (matrix_get_row(0) == (1<<0) && matrix_get_row(1) == 0) {
-        clear_keyboard();
-        volatile uint32_t *uf2bl_backup_reg = (uint32_t*)0x20004000;
-        *uf2bl_backup_reg = 0x9d5bfc2bUL;
-        NVIC_SystemReset();
+void early_hardware_init_pre(void)
+{
+    // Override hard-wired USB pullup to disconnect and reconnect
+    palSetPadMode(GPIOA, 12, PAL_MODE_OUTPUT_PUSHPULL);
+    palClearPad(GPIOA, 12);
+    for (uint32_t i = 0; i < 800000; i++) {
+        __asm__("nop");
     }
 }

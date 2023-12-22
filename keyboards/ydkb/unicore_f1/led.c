@@ -34,7 +34,7 @@ uint8_t welcome_light_on = 0;
 
 LED_TYPE rgbled[INDICATOR_NUM+RGBLED_NUM];
 
-void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) { 
+void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
     // keep indicator color
 #ifdef INDICATOR_0_FUNCT
     if (indicator_state & (1<<0)) {
@@ -56,6 +56,16 @@ void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
         rgbled[1] = RGBLIGHT_COLOR_OFF;
     }
 #endif
+#ifdef INDICATOR_2_FUNCT
+    if (indicator_state & (1<<2)) {
+        rgbled[2] = INDICATOR_2_COLOR;
+        #ifdef INDICATOR_2_INSTRIP
+        start_led[INDICATOR_2_INSTRIP] = INDICATOR_2_COLOR;
+        #endif
+    } else {
+        rgbled[2] = RGBLIGHT_COLOR_OFF;
+    }
+#endif
 
     memcpy(&rgbled[INDICATOR_NUM], start_led, RGBLED_NUM*3);
     if (!welcome_light_on) ws2812_setleds(rgbled, INDICATOR_NUM+RGBLED_NUM);
@@ -72,6 +82,11 @@ void led_set_user(uint8_t usb_led)
 #ifdef INDICATOR_1_FUNCT
     if (usb_led & INDICATOR_1_FUNCT) {
         indicator_state |= (1<<1);
+    }
+#endif
+#ifdef INDICATOR_2_FUNCT
+    if (usb_led & INDICATOR_2_FUNCT) {
+        indicator_state |= (1<<2);
     }
 #endif
     rgblight_set(); //set rgb even when rgblight.enable=0
@@ -111,19 +126,25 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
+void enter_bootloader(void) {
+    clear_keyboard();
+    volatile uint32_t *uf2bl_backup_reg = (uint32_t*)0x20004000;
+    *uf2bl_backup_reg = 0x9d5bfc2bUL;
+    NVIC_SystemReset();
+}
 /* LShift+RShift+LCtrl+B to Bootloader */
 #include "command.h"
 
 bool command_extra(uint8_t code)
 {
     uint8_t pressed_mods = get_mods();
-    clear_keyboard(); 
+    clear_keyboard();
     switch (code) {
         case KC_B:
-            wait_ms(1000);
+            ;
+            wait_us(500*1000);
             if (pressed_mods & MOD_BIT(KC_LCTRL)) {
-            	volatile uint32_t *uf2bl_backup_reg = (uint32_t*)0x20004000;
-            	*uf2bl_backup_reg = 0x9d5bfc2bUL;
+                enter_bootloader();
             }
             //soft reset
             NVIC_SystemReset();
@@ -151,7 +172,7 @@ void hook_keyboard_loop(void) {
         rgblight_config.enable = 0;
         rgblight_config.mode = 0;
     }
-    
+
     // show
     static uint16_t rgb_update_timer = 0;
     if (welcome_light_on && rgb_update_timer != timer_read() && timer_elapsed(rgb_update_timer) > 30) {
