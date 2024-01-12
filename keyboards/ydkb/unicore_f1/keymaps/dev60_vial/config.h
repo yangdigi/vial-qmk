@@ -5,7 +5,7 @@
 #undef  MANUFACTURER
 #define MANUFACTURER    YANG
 #undef  PRODUCT
-#define PRODUCT    UniCore_F1 Dev60 (VIAL FW_VER)
+#define PRODUCT    UniCore_F1 Dev60 (FW_VER)
 #define DYNAMIC_KEYMAP_LAYER_COUNT    6
 #define FLASH_KEYMAP_COUNT    4
 #define VIAL_KEYBOARD_UID    {0x2E, 0xE6, 0x0E, 0x23, 0x34, 0xEF, 0x99, 0x37}

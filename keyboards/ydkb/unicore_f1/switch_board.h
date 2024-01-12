@@ -20,7 +20,7 @@ static inline void select_key_ready(void) {
 #define CLOCK_PULSE() \
     do { \
         palSetPad(GPIOB, 12); \
-        asm("nop"); asm("nop"); \
+        asm("nop"); \
         palClearPad(GPIOB, 12); \
     } while(0)
 #endif
