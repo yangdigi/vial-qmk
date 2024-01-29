@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "stdint.h"
 #include "quantum.h"
 
-
+extern rgblight_config_t rgblight_config;
 static LED_TYPE RGBLIGHT_COLOR_OFF   = { .r = 0, .g = 0, .b = 0 };
 uint8_t indicator_state = 0;
 #ifdef WELCOME_LIGHT
@@ -89,6 +89,7 @@ void led_set_user(uint8_t usb_led)
         indicator_state |= (1<<2);
     }
 #endif
+    if (rgblight_config.mode == 1) rgblight_mode_noeeprom(rgblight_config.mode);
     rgblight_set(); //set rgb even when rgblight.enable=0
 }
 
