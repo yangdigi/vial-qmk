@@ -38,9 +38,13 @@ void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
     // keep indicator color
 #ifdef INDICATOR_0_FUNCT
     if (indicator_state & (1<<0)) {
+        #ifdef INDICATOR_0_VAL
+        sethsv(rgblight_config.hue, rgblight_config.sat, INDICATOR_0_VAL, &rgbled[0]);
+        #else
         rgbled[0] = INDICATOR_0_COLOR;
+        #endif
         #ifdef INDICATOR_0_INSTRIP
-        start_led[INDICATOR_0_INSTRIP] = INDICATOR_0_COLOR;
+        start_led[INDICATOR_0_INSTRIP] = rgbled[0];
         #endif
     } else {
         rgbled[0] = RGBLIGHT_COLOR_OFF;

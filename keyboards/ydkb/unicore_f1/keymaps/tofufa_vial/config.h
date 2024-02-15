@@ -15,4 +15,5 @@
 #define INDICATOR_NUM    1
 #define INDICATOR_0_FUNCT    (1<<USB_LED_CAPS_LOCK)
 #define INDICATOR_0_COLOR    (LED_TYPE){ .r = 255, .g = 0, .b = 255 }
+#define INDICATOR_0_VAL      255
 //#define INDICATOR_0_INSTRIP 0

@@ -4,7 +4,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER_DATE     DO1S
+#define FW_VER_DATE     DO2F
 #define CONTACT(x,y)    x##y
 #define CONTACT2(x,y)   CONTACT(x,y)
 #define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
