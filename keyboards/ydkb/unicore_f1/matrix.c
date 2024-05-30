@@ -61,12 +61,21 @@ void matrix_scan_kb(void)
     hook_keyboard_loop();
 }
 
+bool is_ver5020 = 0;
+
 void matrix_init(void)
 {
     debug_config.enable = 1;
     debug_config.matrix = 0;
 
+    //check ver595 or ver5020
+    palSetPadMode(GPIOB, 9, PAL_MODE_INPUT_PULLUP);
+    palSetPad(GPIOB, 9);
+    wait_ms(10);
+    if (palReadPad(GPIOB, 9) == 0) is_ver5020 = 1;
+
     init_cols();
+    rgblight_set();
 }
 
 static bool process_key_press = 0;
@@ -85,12 +94,12 @@ uint8_t matrix_scan(void)
             first_key_scan = true;
         }
     }
-    if (!first_key_scan) {
+    //if (!first_key_scan) {
         //scan matrix every 1ms
         uint16_t time_check = timer_read();
         if (matrix_scan_timestamp == time_check) return 1;
         matrix_scan_timestamp = time_check;
-    }
+    //}
 
     select_key(0);
     uint8_t matrix_keys_idle = 0;
@@ -124,6 +133,7 @@ uint8_t matrix_scan(void)
     // to avoid all the keys being down in some cases like KEY is connected to GND.
     process_key_press = (matrix_keys_idle > 0);
 
+#if 0 
     // no key down, set matrix_idle.
     if (matrix_keys_idle == MATRIX_ROWS * MATRIX_COLS) {
         select_all_keys();
@@ -136,6 +146,7 @@ uint8_t matrix_scan(void)
             #endif
         }
     }
+#endif
 
     return 1;
 }
@@ -171,14 +182,14 @@ static void init_cols(void)
  
 static uint8_t get_key(void)
 {
-    return (palReadPad(GPIOB, 13)==PAL_HIGH) ? 0 : 0x80;
+    return palReadPad(GPIOB, 13)? 0 : 0x80;
 }
 
 void select_all_keys(void)
 {
     select_key_ready();
 
-    DS_PL_LO();
+    KEY_SDI_ON();
     for (uint8_t i = 0; i < MATRIX_ROWS * MATRIX_COLS; i++) {
         CLOCK_PULSE();
     }
@@ -190,14 +201,14 @@ static void select_key(uint8_t mode)
 {
     select_key_ready();
     if (mode == 0) {
-        DS_PL_HI();
+        KEY_SDI_OFF();
         for (uint8_t i = 0; i < MATRIX_ROWS * MATRIX_COLS; i++) {
             CLOCK_PULSE();
         }
-        DS_PL_LO();
+        KEY_SDI_ON();
         CLOCK_PULSE();
     } else {
-        DS_PL_HI();
+        KEY_SDI_OFF();
         CLOCK_PULSE();
     }
     get_key_ready();
