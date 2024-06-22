@@ -1,3 +1,23 @@
+/*
+Copyright 2023 YANG <drk@live.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * scan matrix
+ */
 #include <stdint.h>
 #include <stdbool.h>
 #include <avr/eeprom.h>
@@ -13,14 +33,12 @@
 #include "keyboard.h"
 #include "timer.h"
 #include "matrix.h"
+#include "debounce_pk.h"
 #include "suspend.h"
 #include "lufa.h"
 #include "ble51.h"
 #include "ble51_task.h"
 #include "switch_board.h"
-
-#define DEBOUNCE_DN_MASK (uint8_t)(~(0x80 >> 5))
-#define DEBOUNCE_UP_MASK (uint8_t)(0x80 >> 5)
 
 bool is_ver595 = 1;
 
@@ -29,16 +47,22 @@ static matrix_row_t matrix[MATRIX_ROWS] = {0};
 static matrix_row_t matrix_v595[MATRIX_ROWS] = {0};
 static matrix_row_t matrix_v11[MATRIX_ROWS] = {0};
 
-
 static uint16_t matrix_scan_timestamp = 0;
 static uint8_t matrix_debouncing[MATRIX_ROWS][MATRIX_COLS] = {0};
 static uint8_t matrix_debouncing_v11[MATRIX_ROWS][MATRIX_COLS] = {0};
+static uint8_t matrix_double_click_fix[MATRIX_ROWS][MATRIX_COLS] = {0};
+static uint8_t matrix_double_click_fix_v11[MATRIX_ROWS][MATRIX_COLS] = {0};
+#ifdef DEFAULT_6KRO
+static uint8_t now_debounce_dn_mask = DEBOUNCE_DN_MASK;
+#else
+static uint8_t now_debounce_dn_mask = DEBOUNCE_NK_MASK;
+#endif
 static void matrix_scan_ver595(void);
 static void matrix_scan_ver11(void);
 
+static uint8_t get_key(uint8_t col);
 static void init_cols(void);
 static void select_row(uint8_t row);
-static uint8_t get_key(uint8_t col);
 static void unselect_rows(void);
 static void select_all_rows(void);
 
@@ -48,18 +72,6 @@ void matrix_scan_user(void) {}
 __attribute__ ((weak))
 void matrix_scan_kb(void) {
   matrix_scan_user();
-}
-
-inline
-uint8_t matrix_rows(void)
-{
-    return MATRIX_ROWS;
-}
-
-inline
-uint8_t matrix_cols(void)
-{
-    return MATRIX_COLS;
 }
 
 void hook_early_init()
@@ -122,16 +134,21 @@ static void matrix_scan_ver595(void) {
     init_cols();
     select_row(10);  // 10 for 595 key0
     uint8_t *debounce = &matrix_debouncing[0][0];
-    for (uint8_t row=0; row<matrix_rows(); row++) {
-        for (uint8_t col=0; col<matrix_cols(); col++, *debounce++) {
+    uint8_t *double_click_fix = &matrix_double_click_fix[0][0];
+    uint8_t one_scan_down = 0;
+    for (uint8_t row=0; row<MATRIX_ROWS; row++) {
+        for (uint8_t col=0; col<MATRIX_COLS; col++, *debounce++, *double_click_fix++) {
             uint8_t real_col = col/2;
             if (col & 1) real_col += 8;
 
             uint8_t key = get_key(real_col);
-            if (real_col >= 8) select_row(11);
             *debounce = (*debounce >> 1) | key;
-            if (1) {
-            //if ((*debounce > 0) && (*debounce < 255) && (BLE51_PowerState < 4)) {
+
+
+            if (real_col >= 8) select_row(11); //11 for 595 next key
+
+            //if ((*debounce > 0) && (*debounce < 0xff)) {
+            if (1) {  //always update matrix[row], it costs only a little time.
                 uint8_t row_trans = row;
                 uint8_t col_trans = real_col;
                 if (row >= 2) {
@@ -142,44 +159,56 @@ static void matrix_scan_ver595(void) {
                 matrix_row_t row_prev  = matrix_v595[row_trans];
                 matrix_row_t *p_row = &matrix_v595[row_trans];
                 matrix_row_t col_mask = ((matrix_row_t)1 << col_trans);
-                if        (*debounce >= DEBOUNCE_DN_MASK) {
-                    *p_row |=  col_mask;
-                } else if (*debounce <= DEBOUNCE_UP_MASK) {
-                    *p_row &= ~col_mask;
+                if (*double_click_fix > 0 && (*p_row & col_mask) == 0) {
+                    (*double_click_fix)--;
+                } else {
+                    if        (*debounce > now_debounce_dn_mask) {  //debounce KEY DOWN 
+                        *p_row |=  col_mask;
+                        *double_click_fix = DOUBLE_CLICK_FIX_DELAY; 
+                    } else if (*debounce < DEBOUNCE_UP_MASK) { //debounce KEY UP
+                        *p_row &= ~col_mask;
+                    }
                 }
                 if (*p_row != row_prev) {
                     matrix[row_trans] = matrix_v595[row_trans];
                 }
             }
         }
+        //if key pressed, update kb_idle_times
         if (matrix[row] > 0) {
             kb_idle_times = 0; 
         }
     }
-    
 }
 
 static void matrix_scan_ver11(void) {
     // scan for ver11    
     is_ver595 = 0;
     init_cols();
-    uint8_t *debounce_v11 = &matrix_debouncing_v11[0][0];
-    for (uint8_t row=0; row<matrix_rows(); row++) {
+    uint8_t *debounce = &matrix_debouncing_v11[0][0];
+    uint8_t *double_click_fix = &matrix_double_click_fix_v11[0][0];
+    for (uint8_t row=0; row<MATRIX_ROWS; row++) {
         select_row(row);
         _delay_us(6);
-        for (uint8_t col=0; col<matrix_cols(); col++, *debounce_v11++) {
+        for (uint8_t col=0; col<MATRIX_COLS; col++, *debounce++, *double_click_fix++) {
             uint8_t key = get_key(col);
-            *debounce_v11 = (*debounce_v11 >> 1) | key;
+            *debounce = (*debounce >> 1) | key;
+
+            //if ((*debounce_v11 > 0) && (*debounce_v11 < 0xff))  {
             if (1) {
-            //if ((*debounce_v11 > 0) && (*debounce_v11 < 0xff) && (BLE51_PowerState < 4))  {
                 matrix_row_t row_prev = matrix_v11[row]; //save prev value of this row
                 matrix_row_t *p_row = &matrix_v11[row];
                 matrix_row_t col_mask = ((matrix_row_t)1 << col);
-                if        (*debounce_v11 >= DEBOUNCE_DN_MASK) {  //debounce KEY DOWN 
-                    *p_row |=  col_mask;
-                } else if (*debounce_v11 <= DEBOUNCE_UP_MASK) { //debounce KEY UP
-                    *p_row &= ~col_mask;
-                } 
+                if (*double_click_fix > 0 && (*p_row & col_mask) == 0) {
+                    (*double_click_fix)--;
+                } else {
+                    if        (*debounce > now_debounce_dn_mask) {  //debounce KEY DOWN 
+                        *p_row |=  col_mask;
+                        *double_click_fix = DOUBLE_CLICK_FIX_DELAY; 
+                    } else if (*debounce < DEBOUNCE_UP_MASK) { //debounce KEY UP
+                        *p_row &= ~col_mask;
+                    }
+                }
                 if (*p_row != row_prev) {
                     matrix[row] = matrix_v11[row];
                 }                    
@@ -302,74 +331,88 @@ static void select_row(uint8_t row)
 
 bool suspend_wakeup_condition(void)
 {
-    if (BLE51_PowerState >= 10) {  //lock mode  
-        matrix_scan();
-        // ver595: Key1_S24 F (debounce[2][8]),  Key2_K20 J (debounce[2][1])
-        uint8_t *debounce = &matrix_debouncing[0][0];
-        uint8_t matrix_keys_down = 0;
-        for (uint8_t i=0; i< MATRIX_ROWS * MATRIX_COLS; i++, *debounce++) {
-            if (*debounce > 0) {
-                if (i == KP(2,1) || i == KP(2,8)) matrix_keys_down += 100;
-                else matrix_keys_down++;
-            }
-        }
-        
-        // ver11: K24 F, K27 J
-        uint8_t *debounce_v11 = &matrix_debouncing_v11[0][0];
-        for (uint8_t i=0; i< MATRIX_ROWS * MATRIX_COLS; i++, *debounce_v11++) {
-            if (*debounce_v11 > 0) {
-                if (i == KP(2,4) || i == KP(2,7)) matrix_keys_down += 100;
-                else matrix_keys_down++;
-            }
-        }
-        
-        if (matrix_keys_down == 200) {
-            if (BLE51_PowerState != 10) command_extra(KC_W);
-            return true;
-        }
-    } else {
-        // ver595
-        //check all keys
-        is_ver595 = 1;
-        init_cols();
-        DS_PL_LO();
-        for (uint8_t i = 0; i < MATRIX_ROWS * MATRIX_COLS; i++) {
-            CLOCK_PULSE();
-        }
-        _delay_us(6);
-        if ( (PINF&0b100010) < 0b100010) { //
-            return true;
-        }
+    uint8_t verx_has_key_pressed = 0;
 
-        // ver11
+    // ver595 check all keys
+    is_ver595 = 1;
+    init_cols();
+    DS_PL_LO();
+    for (uint8_t i = 0; i < 40; i++) {
+        CLOCK_PULSE();
+    }
+    _delay_us(6);
+    if ( (PINF&0b100010) < 0b100010) { //
+        verx_has_key_pressed = 10;
+    }
+
+    // ver 11
+    if (verx_has_key_pressed == 0) {
         is_ver595 = 0;
         init_cols();
         select_all_rows();
         _delay_us(6);
         for (uint8_t i = 0; i < MATRIX_COLS; i++) {
             if (get_key(i)) {
-                return true;
+                verx_has_key_pressed = 11;
+                break;
             }
         }
     }
-    return false;
+    if (verx_has_key_pressed && BLE51_PowerState >= 10) {  //lock mode
+        uint8_t matrix_keys_down = 0;
+        // ver595(1.0) lock mode
+        if (verx_has_key_pressed == 10) {
+            // ver595: Key1_S24 F (debounce[2][8]),  Key2_K20 J (debounce[2][1])
+            //memset(matrix_debouncing, 0, sizeof(matrix_debouncing));
+            matrix_scan_ver595();
+            uint8_t *debounce = &matrix_debouncing[0][0];
+            for (uint8_t i=0; i< MATRIX_ROWS * MATRIX_COLS; i++, *debounce++) {
+                if (*debounce > 0) {
+                    if (i == KP(2,1) || i == KP(2,8)) matrix_keys_down += 100;
+                    else matrix_keys_down++;
+                }
+            }
+        } else { // verx_has_key_pressed == 11)
+            // ver11: K24 F, K27 J
+            //memset(matrix_debouncing_v11, 0, sizeof(matrix_debouncing_v11));
+            matrix_scan_ver11();
+            uint8_t *debounce_v11 = &matrix_debouncing_v11[0][0];
+            for (uint8_t i=0; i< MATRIX_ROWS * MATRIX_COLS; i++, *debounce_v11++) {
+                if (*debounce_v11 > 0) {
+                    if (i == KP(2,4) || i == KP(2,7)) matrix_keys_down += 100;
+                    else matrix_keys_down++;
+                }
+            }
+        }
+        if (matrix_keys_down == 200) {
+            if (!ble51_boot_on) command_extra(KC_W);
+            return true;
+        } else if (!ble51_boot_on && matrix_keys_down) return true;
+        else return false; //has_key_pressed but not wake up in lock mode.
+    }
+    return verx_has_key_pressed;
 }
 
+void hook_nkro_change(void) {
+    uint8_t kbd_nkro = (keyboard_protocol & (1<<4));
+    if (!kbd_nkro) {  // kbd_nkro before hook_nkro_change()
+        now_debounce_dn_mask = DEBOUNCE_NK_MASK;
+    } else {
+        now_debounce_dn_mask = DEBOUNCE_DN_MASK;
+    }
+    type_num(kbd_nkro?6:0);
+}
+
+#ifdef SUSPEND_ACTION
 void suspend_power_down_action(void)
 {
     PORTC &= ~(1<<6);  //caps led off
-    #if 0
-    if (BLE51_PowerState >= 10) {
-        memset(matrix, 0, sizeof matrix);
-        memset(matrix_v11, 0, sizeof matrix_v11);
-    }
-    #endif
 }
 
 void suspend_wakeup_init_action(void)
 {
-    if (BLE51_PowerState >= 4) display_connection_status_check_times = 1;
 }
+#endif
 
 
 void ble51_task_user(void)
@@ -402,3 +445,16 @@ void ble51_task_user(void)
         }
     }
 }
+
+void bootmagic_lite(void) {
+    matrix_scan();
+    wait_ms(10);
+    matrix_scan();
+
+    if (matrix_get_row(1) == (1<<3 | 1<<0)) {  //tab and E
+        bootmagic_lite_reset_eeprom();
+        // Jump to bootloader.
+        bootloader_jump();
+    }
+}
+
