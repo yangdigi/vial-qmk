@@ -37,4 +37,14 @@ static inline void select_key_ready(void) {
         palSetPad(GPIOB, 12); \
         palClearPad(GPIOB, 12); \
     } while(0)
+
+//RCK PB11
+#if 0
+#define KEYS_LATCH() \
+    do { \
+        palSetPad(GPIOB, 11); \
+        palClearPad(GPIOB, 11); \
+    } while(0)
+
+#endif
 #endif

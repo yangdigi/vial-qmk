@@ -175,13 +175,14 @@ uint8_t matrix_key_count(void)
 
 static void init_cols(void)
 {
-    //595 pin
-    palSetGroupMode(GPIOB,  (1<<13 | 1<<12), 0 , PAL_MODE_OUTPUT_PUSHPULL);
+    // 595 | 5020 pin
+    palSetGroupMode(GPIOB, (1<<13 | 1<<12), 0 , PAL_MODE_OUTPUT_PUSHPULL);
 }
 
  
 static uint8_t get_key(void)
 {
+    // B13(595) and B14(5020)
     return palReadPad(GPIOB, 13)? 0 : 0x80;
 }
 
@@ -193,6 +194,7 @@ void select_all_keys(void)
     for (uint8_t i = 0; i < MATRIX_ROWS * MATRIX_COLS; i++) {
         CLOCK_PULSE();
     }
+    //KEYS_LATCH();
     get_key_ready();
 }
 
@@ -211,6 +213,7 @@ static void select_key(uint8_t mode)
         KEY_SDI_OFF();
         CLOCK_PULSE();
     }
+    //KEYS_LATCH();
     get_key_ready();
 }
 
