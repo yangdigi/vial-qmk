@@ -85,6 +85,11 @@ void eeconfig_update_rgb_matrix(void);
 // EEPROM is invalid and use/save defaults.
 bool via_eeprom_is_valid(void) {
 #ifdef VIAL_ENABLE
+  #ifdef RECORE
+    // build_id.py: print("#define BUILD_ID ((uint32_t)0x{:08X})".format(random.randrange(0, 2 ** 24 - 1)))
+    // use 16bit,and it should not be 0xffff.
+    return (eeprom_read_word((void *)VIA_EEPROM_MAGIC_ADDR) == (BUILD_ID & 0xfffe));
+  #endif
     uint8_t magic0 = BUILD_ID & 0xFF;
     uint8_t magic1 = (BUILD_ID >> 8) & 0xFF;
     uint8_t magic2 = (BUILD_ID >> 16) & 0xFF;
@@ -102,6 +107,10 @@ bool via_eeprom_is_valid(void) {
 // Keyboard level code (eg. via_init_kb()) should not call this
 void via_eeprom_set_valid(bool valid) {
 #ifdef VIAL_ENABLE
+  #ifdef RECORE
+    eeprom_update_word((void *)VIA_EEPROM_MAGIC_ADDR, valid ? (BUILD_ID & 0xfffe) : 0xffff);
+    return;
+  #endif
     uint8_t magic0 = BUILD_ID & 0xFF;
     uint8_t magic1 = (BUILD_ID >> 8) & 0xFF;
     uint8_t magic2 = (BUILD_ID >> 16) & 0xFF;
@@ -140,8 +149,13 @@ void via_init(void) {
 }
 
 void eeconfig_init_via(void) {
+#ifdef __AVR__
+    cli();
+#endif
     // set the magic number to false, in case this gets interrupted
+  #ifndef RECORE
     via_eeprom_set_valid(false);
+  #endif
     // This resets the layout options
     via_set_layout_options(VIA_EEPROM_LAYOUT_OPTIONS_DEFAULT);
     // This resets the keymaps in EEPROM to what is in flash.
@@ -150,6 +164,9 @@ void eeconfig_init_via(void) {
     dynamic_keymap_macro_reset();
     // Save the magic number last, in case saving was interrupted
     via_eeprom_set_valid(true);
+#ifdef __AVR__
+    sei();
+#endif
 }
 
 // This is generalized so the layout options EEPROM usage can be
@@ -193,6 +210,7 @@ bool process_record_via(uint16_t keycode, keyrecord_t *record) {
     // TODO: ideally this would be generalized and refactored into
     // QMK core as advanced keycodes, until then, the simple case
     // can be available here to keyboards using VIA
+    #ifndef RECORE
     switch (keycode) {
         case FN_MO13:
             if (record->event.pressed) {
@@ -215,6 +233,7 @@ bool process_record_via(uint16_t keycode, keyrecord_t *record) {
             return false;
             break;
     }
+    #endif
     return true;
 }
 
@@ -238,6 +257,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     uint8_t *command_data = &(data[1]);
 
 #ifdef VIAL_ENABLE
+  #ifndef VIAL_INSECURE
     /* When unlock is in progress, we can only react to a subset of commands */
     if (vial_unlock_in_progress) {
         if (data[0] != id_vial_prefix)
@@ -246,6 +266,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
         if (cmd != vial_get_keyboard_id && cmd != vial_get_size && cmd != vial_get_def && cmd != vial_get_unlock_status && cmd != vial_unlock_start && cmd != vial_unlock_poll)
             goto skip;
     }
+  #endif
 #endif
 
     switch (*command_id) {
@@ -274,9 +295,11 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
                 }
                 case id_switch_matrix_state: {
 #ifdef VIAL_ENABLE
+  #ifndef VIAL_INSECURE
                     /* Disable wannabe keylogger unless unlocked */
                     if (!vial_unlocked)
                         goto skip;
+  #endif
 #endif
 
 #if ((MATRIX_COLS / 8 + 1) * MATRIX_ROWS <= 28)
@@ -424,9 +447,11 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
         }
         case id_dynamic_keymap_macro_set_buffer: {
 #ifdef VIAL_ENABLE
+  #ifndef VIAL_INSECURE
             /* Until keyboard is unlocked, don't allow changing macros */
             if (!vial_unlocked)
                 goto skip;
+  #endif
 #endif
             uint16_t offset = (command_data[0] << 8) | command_data[1];
             uint16_t size   = command_data[2]; // size <= 28

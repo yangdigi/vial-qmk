@@ -66,6 +66,10 @@ static void switch_default_layer(uint8_t layer);
 command_state_t command_state = ONESHOT;
 
 bool command_proc(uint8_t code) {
+#ifdef NO_DEFAULT_COMMAND //32B
+    if (!IS_COMMAND()) return false;
+    return command_extra(code);
+#endif 
     switch (command_state) {
         case ONESHOT:
             if (!IS_COMMAND()) return false;
@@ -324,6 +328,9 @@ static void print_eeconfig(void) {
 #endif /* !NO_PRINT && !USER_PRINT */
 
 static bool command_common(uint8_t code) {
+#ifdef NO_DEFAULT_COMMAND
+    return true;
+#endif
 #ifdef KEYBOARD_LOCK_ENABLE
     static host_driver_t *host_driver = 0;
 #endif
@@ -554,6 +561,9 @@ static void command_console_help(void) {
 }
 
 static bool command_console(uint8_t code) {
+#ifdef NO_DEFAULT_COMMAND
+    return true;
+#endif 
     switch (code) {
         case KC_H:
         case KC_SLASH: /* ? */
@@ -636,6 +646,9 @@ static void mousekey_console_help(void) {
  * any doubt: we return `false` to return to the main console,
  * which differs from the `bool` that `command_proc()` returns. */
 bool mousekey_console(uint8_t code) {
+#ifdef NO_DEFAULT_COMMAND
+    return true;
+#endif
     static uint8_t  param = 0;
     static uint8_t *pp    = NULL;
     static char *   desc  = NULL;

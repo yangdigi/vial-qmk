@@ -36,11 +36,24 @@ static int8_t cb_count = 0;
  * FIXME: Needs doc
  */
 uint8_t has_anykey(report_keyboard_t* keyboard_report) {
+#ifdef RECORE //26B,
+    // Only check if key, no need to get how many keys. 
+    uint8_t *pr = keyboard_report->keys;
+    uint8_t lpr = sizeof(keyboard_report->nkro.bits);
+    while (lpr--) {
+        if (*pr++) return 1;
+    }
+    return 0;
+#endif
     uint8_t  cnt = 0;
     uint8_t* p   = keyboard_report->keys;
     uint8_t  lp  = sizeof(keyboard_report->keys);
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         p  = keyboard_report->nkro.bits;
         lp = sizeof(keyboard_report->nkro.bits);
     }
@@ -57,7 +70,11 @@ uint8_t has_anykey(report_keyboard_t* keyboard_report) {
  */
 uint8_t get_first_key(report_keyboard_t* keyboard_report) {
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         uint8_t i = 0;
         for (; i < KEYBOARD_REPORT_BITS && !keyboard_report->nkro.bits[i]; i++)
             ;
@@ -84,11 +101,21 @@ uint8_t get_first_key(report_keyboard_t* keyboard_report) {
  * Note: The function doesn't support modifers currently, and it returns false for KC_NO
  */
 bool is_key_pressed(report_keyboard_t* keyboard_report, uint8_t key) {
+#ifdef RECORE
+    //https://github.com/qmk/qmk_firmware/issues/1708
+    // disable with return, save 110B(false, and not work)
+    // save 90B (true). Then always del_key before add
+    return true;
+#endif
     if (key == KC_NO) {
         return false;
     }
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         if ((key >> 3) < KEYBOARD_REPORT_BITS) {
             return keyboard_report->nkro.bits[key >> 3] & 1 << (key & 7);
         } else {
@@ -109,6 +136,23 @@ bool is_key_pressed(report_keyboard_t* keyboard_report, uint8_t key) {
  * FIXME: Needs doc
  */
 void add_key_byte(report_keyboard_t* keyboard_report, uint8_t code) {
+#ifdef RECORE
+#define KEYBOARD_REPORT_6KRO_BUFFER 6 //(KEYBOARD_REPORT_KEYS - 1)
+    //save 16B
+    int8_t target_pos = -1;
+    /*  find the code pos, or when finding the first 0, the code is not in report. */
+    for (uint8_t i=0; i < KEYBOARD_REPORT_6KRO_BUFFER; i++) {
+        if (keyboard_report->keys[i] == code || keyboard_report->keys[i] == 0) {
+            target_pos = i;
+            break;
+        }
+    }
+
+    if (target_pos != -1) {
+        keyboard_report->keys[target_pos] = code;
+    }
+    return;
+#endif
 #ifdef RING_BUFFERED_6KRO_REPORT_ENABLE
     int8_t i     = cb_head;
     int8_t empty = -1;
@@ -242,7 +286,11 @@ void del_key_bit(report_keyboard_t* keyboard_report, uint8_t code) {
  */
 void add_key_to_report(report_keyboard_t* keyboard_report, uint8_t key) {
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         add_key_bit(keyboard_report, key);
         return;
     }
@@ -256,7 +304,11 @@ void add_key_to_report(report_keyboard_t* keyboard_report, uint8_t key) {
  */
 void del_key_from_report(report_keyboard_t* keyboard_report, uint8_t key) {
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         del_key_bit(keyboard_report, key);
         return;
     }
@@ -269,9 +321,17 @@ void del_key_from_report(report_keyboard_t* keyboard_report, uint8_t key) {
  * FIXME: Needs doc
  */
 void clear_keys_from_report(report_keyboard_t* keyboard_report) {
+#ifdef RECORE //always clear all. save 20B
+    memset(keyboard_report->nkro.bits, 0, KEYBOARD_REPORT_BITS);
+    return;
+#endif
     // not clear mods
 #ifdef NKRO_ENABLE
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         memset(keyboard_report->nkro.bits, 0, sizeof(keyboard_report->nkro.bits));
         return;
     }

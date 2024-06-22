@@ -16,7 +16,7 @@ enum user_keycode {
     RGB_LUM_UP, 
 };
 
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+const uint8_t PROGMEM keymaps8[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = {
     { KC_ESC, KC_4,   KC_3,   KC_2,   KC_5,   KC_6,   KC_1,   KC_F13,      KC_MINS,KC_7,   KC_8,   KC_GRV, KC_9,   KC_0,   KC_EQL ,KC_F15, },
     { KC_TAB, KC_R,   KC_E,   KC_W,   KC_T,   KC_Y,   KC_Q,   KC_F14,      KC_P,   KC_BSPC,KC_U,   KC_RBRC,KC_I,   KC_O,   KC_LBRC,KC_F16, },

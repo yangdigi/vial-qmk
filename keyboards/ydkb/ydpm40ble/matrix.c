@@ -226,3 +226,11 @@ bool suspend_wakeup_condition(void)
     }
     return false;
 }
+
+void bootmagic_lite(void)
+{
+    //do nothing
+    return;
+
+}
+

@@ -274,11 +274,17 @@ void dynamic_keymap_reset(void) {
     for (int layer = 0; layer < DYNAMIC_KEYMAP_LAYER_COUNT; layer++) {
         for (int row = 0; row < MATRIX_ROWS; row++) {
             for (int column = 0; column < MATRIX_COLS; column++) {
+#ifdef FLASH_KEYMAP8_COUNT
+                dynamic_keymap_set_keycode(layer, row, column, (layer < FLASH_KEYMAP8_COUNT)? pgm_read_byte(&keymaps8[layer][row][column]):1);
+#elif defined(FLASH_KEYMAP_COUNT)
+                dynamic_keymap_set_keycode(layer, row, column, (layer < FLASH_KEYMAP_COUNT)? pgm_read_word(&keymaps[layer][row][column]):1);
+#else
                 if (layer < keymap_layer_count()) {
                     dynamic_keymap_set_keycode(layer, row, column, pgm_read_word(&keymaps[layer][row][column]));
                 } else {
                     dynamic_keymap_set_keycode(layer, row, column, KC_TRANSPARENT);
                 }
+#endif
             }
         }
 #ifdef ENCODER_MAP_ENABLE

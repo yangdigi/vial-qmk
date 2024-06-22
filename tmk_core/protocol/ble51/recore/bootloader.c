@@ -35,6 +35,7 @@ void bootloader_jump(void) {
     if (BLE51_PowerState <= 1) {
         _delay_ms(10);
         USB_Disable();
+        // When BLE51_PowerState > 1, watchdog already on
         watchdog_on(); 
     }
     for (;;);

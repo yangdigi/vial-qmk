@@ -137,6 +137,7 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
         }
 #endif
         case vial_get_unlock_status: {
+#ifndef RECORE
             /* Reset message to all FF's */
             memset(msg, 0xFF, length);
             /* First byte of message contains the status: whether board is unlocked */
@@ -151,12 +152,15 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
             }
 #endif
             break;
+#endif
         }
         case vial_unlock_start: {
+#if !defined(VIAL_INSECURE) && !defined(RECORE)
             vial_unlock_in_progress = 1;
             vial_unlock_counter = VIAL_UNLOCK_COUNTER_MAX;
             vial_unlock_timer = timer_read();
             break;
+#endif
         }
         case vial_unlock_poll: {
 #ifndef VIAL_INSECURE
@@ -179,9 +183,15 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
                 }
             }
 #endif
+#ifndef RECORE
             msg[0] = vial_unlocked;
             msg[1] = vial_unlock_in_progress;
             msg[2] = vial_unlock_counter;
+#else
+            msg[0] = 1;//vial_unlocked;
+            msg[1] = 0;//vial_unlock_in_progress;
+            msg[2] = 0;//vial_unlock_counter;
+#endif
             break;
         }
         case vial_lock: {
@@ -238,12 +248,22 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
                 uint8_t idx = msg[3];
                 vial_tap_dance_entry_t td;
                 memcpy(&td, &msg[4], sizeof(td));
+#ifndef RECORE
                 td.on_tap = vial_keycode_firewall(td.on_tap);
                 td.on_hold = vial_keycode_firewall(td.on_hold);
                 td.on_double_tap = vial_keycode_firewall(td.on_double_tap);
                 td.on_tap_hold = vial_keycode_firewall(td.on_tap_hold);
                 msg[0] = dynamic_keymap_set_tap_dance(idx, &td);
                 reload_tap_dance();
+
+#else
+                //td.on_tap = vial_keycode_firewall(td.on_tap);
+                //td.on_hold = vial_keycode_firewall(td.on_hold);
+                //td.on_double_tap = vial_keycode_firewall(td.on_double_tap);
+                //td.on_tap_hold = vial_keycode_firewall(td.on_tap_hold);
+                msg[0] = dynamic_keymap_set_tap_dance(idx, &td);
+                vial_init();
+#endif
                 break;
             }
 #endif
@@ -259,9 +279,15 @@ void vial_handle_cmd(uint8_t *msg, uint8_t length) {
                 uint8_t idx = msg[3];
                 vial_combo_entry_t entry;
                 memcpy(&entry, &msg[4], sizeof(entry));
+#ifndef RECORE
                 entry.output = vial_keycode_firewall(entry.output);
                 msg[0] = dynamic_keymap_set_combo(idx, &entry);
                 reload_combo();
+#else
+                //entry.output = vial_keycode_firewall(entry.output);
+                msg[0] = dynamic_keymap_set_combo(idx, &entry);
+                vial_init();
+#endif
                 break;
             }
 #endif

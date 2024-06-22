@@ -58,6 +58,9 @@ static void power_down(uint8_t wdto)
 
 void suspend_power_down(void)
 {
+#ifdef WDTO_EXTRA_15MS
+    power_down(WDTO_15MS);
+#endif
     power_down(WDTO_30MS);
 }
 
@@ -71,7 +74,11 @@ void suspend_wakeup_init(void)
 
 ISR(WDT_vect)
 {
+    // default 30ms instead of 15ms
     if (wdt_timeout == WDTO_30MS) { timer_count += 30 + 2; }  
+#ifdef WDTO_EXTRA_15MS
+    else if (wdt_timeout == WDTO_15MS) { timer_count += 15 + 2;} //from observation
+#endif
 }
 
 

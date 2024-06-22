@@ -6,7 +6,7 @@
 #endif
 
 #ifndef RGBLIGHT_EFFECT_SNAKE_LENGTH
-#define RGBLIGHT_EFFECT_SNAKE_LENGTH 4
+#define RGBLIGHT_EFFECT_SNAKE_LENGTH 2
 #endif
 
 #ifndef RGBLIGHT_EFFECT_KNIGHT_LENGTH
@@ -48,6 +48,7 @@ typedef union {
   };
 } rgblight_config_t;
 
+void rgblight_clear(void);
 void rgblight_init(void);
 void rgblight_action(uint8_t action);
 void rgblight_toggle(void);
@@ -66,7 +67,6 @@ void sethsv(uint16_t hue, uint8_t sat, uint8_t val, struct cRGB *led1);
 void setrgb(uint8_t r, uint8_t g, uint8_t b, struct cRGB *led1);
 void rgblight_sethsv_noeeprom(uint16_t hue, uint8_t sat, uint8_t val);
 
-void rgblight_clear(void);
 void rgblight_timer_init(void);
 void rgblight_timer_enable(void);
 void rgblight_timer_disable(void);

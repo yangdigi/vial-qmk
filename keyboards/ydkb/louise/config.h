@@ -3,9 +3,10 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DMCM
-#define FW_VER_VIA      VIA_DMCM
-#define FW_VER_VIAL     VIAL_DMCM
+#define FW_VER_DATE     DO6A
+#define CONTACT(x,y)    x##y
+#define CONTACT2(x,y)   CONTACT(x,y)
+#define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2141
 #define DEVICE_VER      0x0001
@@ -16,12 +17,6 @@
 #define MATRIX_ROWS 4  //595 num of each side.
 #define MATRIX_COLS 16
 
-
-
-#define TAPPING_TOGGLE  2
-
-#define TAPPING_TERM    200
-#define IGNORE_MOD_TAP_INTERRUPT // this makes it possible to do rolling combos (zx) with keys that convert to other keys on hold (z becomes ctrl when you hold it, and when this option isn't enabled, z rapidly followed by x actually sends Ctrl-x. That's bad.)
 
 #define BACKLIGHT_PIN C6
 #define BACKLIGHT_LEVELS 6
@@ -37,13 +32,12 @@
 #define ws2812_DDRREG   DDRD
 #define ws2812_pin PD7
 #define RGBLED_NUM 8     // Number of LEDs
+#define RGBLIGHT_MODES 14 //less rgblight mode to save some space for vial 
 
 /* disable command for default layer */
 #define MAGIC_KEY_SWITCH_LAYER_WITH_FKEYS  0
 #define MAGIC_KEY_SWITCH_LAYER_WITH_NKEYS  0
 
-/* fix space cadet rollover issue */
-#define DISABLE_SPACE_CADET_ROLLOVER
 
 #if defined(__AVR_ATmega32U4__) || defined(__AVR_AT90USB1286__)
     #define UCSR1D _SFR_MEM8(0xCB)
@@ -70,9 +64,10 @@
 #endif
 /* BT Power Control */
 #define BT_POWERED    (~PORTD & (1<<5))
-#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5);} while(0)
-#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B &= ~(1<<TXEN1); } while(0)
-#define turn_on_bt()    do { PORTD &= ~(1<<5); UCSR1B |= (1<<TXEN1);} while(0)
+#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5); } while(0)
+#define bt_power_reset()    do {PORTD |= (1<<5); WAIT_MS(100); PORTD &= ~(1<<5);} while(0)
+#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B = (1<<RXCIE1 | 1<<RXEN1); } while(0)
+#define turn_on_bt()    do { PORTD &= ~(1<<5); if (UCSR1B == (1<<RXCIE1 | 1<<RXEN1)) WAIT_MS(200); UCSR1B = (1<<RXCIE1 | 1<<RXEN1 | 1<<TXEN1); } while(0)
 
 #define BLE_NAME "Louise BLE"
 #define BLE_BATTERY_SERVICE
@@ -84,6 +79,8 @@
 #define CHARGING_STATE_INIT()    do { DDRC &= ~(1<<7); PORTC |= (1<<7);} while(0)
 #define HARDWARE_BT_SWITCH
 
+#define BLE51_NO_BATTERY_VOLTAGE
+#define BLE51_NO_ULTRA_LOW_BATTERY
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.
@@ -97,6 +94,7 @@
 /* disable action features */
 //#define NO_ACTION_LAYER
 //#define NO_ACTION_TAPPING
-//#define NO_ACTION_ONESHOT
+//#define NO_ACTION_ONESHOT  //930B
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
+#define NO_DEFAULT_COMMAND

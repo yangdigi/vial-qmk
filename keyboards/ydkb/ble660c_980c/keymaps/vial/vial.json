@@ -3,9 +3,9 @@
   "matrix": {"rows": 7, "cols": 16},
   "customKeycodes": [
     {"name": "BT/USB", "title": "", "shortName": "BT/USB"},
-    {"name": "RESET", "title": "", "shortName": "RESET"},
-    {"name": "BAT%", "title": "", "shortName": "BATT LEVEL"},
-    {"name": "LkMode", "title": "", "shortName": "LOCK MODE"}
+    {"name": "BLERST", "title": "", "shortName": "BLERST"},
+    {"name": "BAT%", "title": "", "shortName": "BAT%"},
+    {"name": "LkMode", "title": "", "shortName": "LkMode"}
   ], 
   "layouts": {
     "labels":[["Keyboard", "BLE660C", "BLE980C"]], 

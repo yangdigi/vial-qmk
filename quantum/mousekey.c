@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#ifndef RECORE
 #include <stdint.h>
 #include <string.h>
 #include "keycode.h"
@@ -537,3 +537,4 @@ report_mouse_t mousekey_get_report(void) {
 bool should_mousekey_report_send(report_mouse_t *mouse_report) {
     return mouse_report->x || mouse_report->y || mouse_report->v || mouse_report->h;
 }
+#endif

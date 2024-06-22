@@ -3,14 +3,19 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DMCN
-#define FW_VER_VIA      VIA_DMCN
-#define FW_VER_VIAL     VIAL_DMCN
+#define FW_VER_DATE     DO69
+#define CONTACT(x,y)    x##y
+#define CONTACT2(x,y)   CONTACT(x,y)
+#define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x2040
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    YDKB
+#if CONSOLE_ENABLE
+#define PRODUCT         Pearly Debug (FW_VER)
+#else
 #define PRODUCT         Pearly (FW_VER)
+#endif
 
 
 #define MATRIX_ROWS 4
@@ -21,7 +26,7 @@
 #define TAPPING_TOGGLE  2
 
 #define BACKLIGHT_PIN B7
-#define BACKLIGHT_LEVELS 6
+#define BACKLIGHT_LEVELS 1
 #define BACKLIGHT_ON_STATE 0
 
 /* key combination for command */
@@ -34,6 +39,7 @@
 #define ws2812_DDRREG   DDRD
 #define ws2812_pin PD0
 #define RGBLED_NUM 12     // Number of LEDs
+#define RGBLIGHT_MODES 14 //less rgblight mode to save some space for vial 
 
 /* disable command for default layer */
 #define MAGIC_KEY_SWITCH_LAYER_WITH_FKEYS  0
@@ -67,15 +73,18 @@
 #endif
 /* BT Power Control */
 #define BT_POWERED    (~PORTD & (1<<5))
-#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5);} while(0)
-#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B &= ~(1<<TXEN1); } while(0)
-#define turn_on_bt()    do { PORTD &= ~(1<<5); UCSR1B |= (1<<TXEN1);} while(0)
+#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5); } while(0)
+#define bt_power_reset()    do {PORTD |= (1<<5); WAIT_MS(100); PORTD &= ~(1<<5);} while(0)
+#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B = (1<<RXCIE1 | 1<<RXEN1); } while(0)
+#define turn_on_bt()    do { PORTD &= ~(1<<5); if (UCSR1B == (1<<RXCIE1 | 1<<RXEN1)) WAIT_MS(200); UCSR1B = (1<<RXCIE1 | 1<<RXEN1 | 1<<TXEN1); } while(0)
 
 #define BLE_NAME "Pearly BLE"
 #define BLE_BATTERY_SERVICE
 #define BLE_LIGHT_ON (~PORTD & (1<<4))  //RGB Power IO
 #define HARDWARE_BT_SWITCH
 
+#define BLE51_NO_BATTERY_VOLTAGE
+#define BLE51_NO_ULTRA_LOW_BATTERY
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.
@@ -89,6 +98,7 @@
 /* disable action features */
 //#define NO_ACTION_LAYER
 //#define NO_ACTION_TAPPING
-//#define NO_ACTION_ONESHOT
+//#define NO_ACTION_ONESHOT  //930B
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
+#define NO_DEFAULT_COMMAND

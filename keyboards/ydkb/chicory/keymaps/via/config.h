@@ -1,4 +1,4 @@
 #pragma once
 #undef  PRODUCT
-#define PRODUCT     HHKB BLE (FW_VER_VIA)
+#define PRODUCT     Louise (FW_VER_VIA)
 #define DYNAMIC_KEYMAP_LAYER_COUNT 4

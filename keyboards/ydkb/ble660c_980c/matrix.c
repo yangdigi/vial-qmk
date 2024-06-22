@@ -1,5 +1,5 @@
 /*
-Copyright 2011 Jun Wako <wakojun@gmail.com>
+Copyright 2023 YANG <drk@live.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -38,61 +38,82 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "switch_board.h"
 
 
+// 这个时间即使加到800，980c也无法正常。但是980c加入22uf的电容后，200也可以。
+static uint8_t matrix_start_delay_timer = 200;
 
 // matrix state buffer(1:on, 0:off)
 static matrix_row_t *matrix;
 static matrix_row_t *matrix_prev;
-static matrix_row_t _matrix0[MATRIX_ROWS];
-static matrix_row_t _matrix1[MATRIX_ROWS];
+static matrix_row_t _matrix0[MATRIX_ROWS] = {0};
+static matrix_row_t _matrix1[MATRIX_ROWS] = {0};
 
 static uint8_t matrix_keys_down = 0;
+
+static uint16_t matrix_scan_timestamp = 0;
 static uint8_t fc_matrix_rows;
+
+struct {
+    uint8_t rows;
+    uint8_t final_col;
+} hhkb_matrix;
+
+void matrix_scan_user(void) {}
+__attribute__ ((weak))
+void matrix_scan_kb(void) {
+    matrix_scan_user();
+    hook_keyboard_loop();
+}
 
 static uint8_t wake_scan = 0;
 
 bool is_980c = 0;
-bool is_ver22 = 0;
-
 
 void hook_early_init()
 {
+#if 0 // 使用PF6判断 980C，舍弃此方法
     DDRF &= ~(1<<PF6);
     PORTF |= (1<<PF6);
     _delay_ms(2);
     is_980c = (PINF&(1<<PF6))? 0 : 1;
+#endif
+    // 从BL的文件名判断是否为980C
+    for (uint16_t i=0x7fff-1024; i < 0x7ffff; i++) {
+        //BLE9, 42 4C 45 39, BLE6,36
+        //if (pgm_read_byte(i)   != 0x42) continue; // B
+        if (pgm_read_byte(i) != 0x4C) continue; // L
+        if (pgm_read_byte(++i) != 0x45) continue; // E
+        if (pgm_read_byte(++i) == 0x39) is_980c = 1;
+        break;
+    }
 
     /* led init */
-    DDRB  |= (1<<PB6 |1<<PB5);
-    if (is_980c) {
-        PORTB &= ~(1<<PB6 |1<<PB5);
-        DDRD  |=  (1<<PD7);
-        PORTD &= ~(1<<PD7);
-    } else {
-        PORTB |= (1<<PB6 |1<<PB5);
-    }
+    led_all_off();
         
-    // v22, check ble reset
-    if (pgm_read_byte(0x681f) == 0xcf) {
-        is_ver22 = 1;
+    // always try hardware reset.
+    if (1) { 
         // PB7 input, hi-z for v25
-        PORTB |=  (1<<PB7);
-        DDRB  &= ~(1<<PB7);
+        DDRB  &= ~(1<<7);
+        PORTB |=  (1<<7);
         //BLE Reset
         if (ble_reset_key == 0xBBAA) {
-            ble_reset_key = 0;
-            DDRB  |=  (1<<PB7);
-            PORTB &= ~(1<<PB7);
+            // PB7 to RESET_51 for v2.2 
+            // PD3,TX_MCU to RX_51 and connected to RESET_51 through 10K resistance.
+            DDRB  |=  (1<<7);
+            PORTB &= ~(1<<7);
+            DDRD  |=  (1<<3);
+            PORTD &= ~(1<<3);
             bt_power_init();
+            #if 0
             if (is_980c) {
-                PORTD |= (1<<PD7);
-                PORTB |= (1<<PB6 | 1<<PB5);
+                PORTD |= (1<<7);
+                PORTB |= (1<<6 | 1<<5);
             } else {
-                PORTB &= ~(1<<PB6 | 1<<PB5);
+                PORTB &= ~(1<<6 | 1<<5);
             }
+            #endif
             _delay_ms(5000);
-            bootloader_jump(); 
+            turn_off_bt();
         }
-
     } 
 }
 
@@ -113,16 +134,31 @@ void matrix_init(void)
     KEY_INIT();
 
     // initialize matrix state: all keys off
-    for (uint8_t i=0; i < MATRIX_ROWS; i++) _matrix0[i] = 0x00;
-    for (uint8_t i=0; i < MATRIX_ROWS; i++) _matrix1[i] = 0x00;
+    //for (uint8_t i=0; i < MATRIX_ROWS; i++) _matrix0[i] = 0x00;
+    //for (uint8_t i=0; i < MATRIX_ROWS; i++) _matrix1[i] = 0x00;
     matrix = _matrix0;
     matrix_prev = _matrix1;
 
     fc_matrix_rows = is_980c? 7 : 5;
 }
 
+uint8_t matrix_started(void) {
+    if (matrix_start_delay_timer) {
+        uint16_t time_check = timer_read();
+        if (matrix_scan_timestamp != time_check) {
+            matrix_scan_timestamp = time_check;
+            if (matrix_start_delay_timer == 1) KEY_INIT();
+            matrix_start_delay_timer--;
+        }
+        return 0;
+    }
+    return 1;
+}
+
 uint8_t matrix_scan(void)
 {
+    if (matrix_started() == 0) return 1; // 延迟启动，这样可以不要钽电容了，但还是保留。
+    
     matrix_row_t *tmp;
 
     tmp = matrix_prev;
@@ -213,6 +249,7 @@ uint8_t matrix_scan(void)
             }
         }
     }
+    matrix_scan_quantum();
 
     return 1;
 }
@@ -235,7 +272,7 @@ void matrix_print(void)
 bool suspend_wakeup_condition(void)
 {
     static uint8_t sleep_timer = 0;
-    if (BLE51_PowerState >= 4) {
+    if (BT_POWERED == 0) {
         if (++sleep_timer < 80) return false;
         else sleep_timer = 0;
     }
@@ -244,7 +281,7 @@ bool suspend_wakeup_condition(void)
     wake_scan = 1;
     matrix_scan();
     //tp1685 fix
-    if (BLE51_PowerState >= 4) {
+    if (BT_POWERED == 0) {
         matrix_scan();
     }
     if (matrix_scan() == 100) {
@@ -257,70 +294,81 @@ bool suspend_wakeup_condition(void)
 void suspend_power_down_action(void)
 {
     KEY_POWER_OFF();
-    if (is_980c) {
-        PORTD &= ~(1<<7);
-        PORTB &= ~(1<<6 | 1<<5); // turn off all leds.
-    } else {
-        PORTB |= (1<<6 | 1<<5); // turn off all leds.
-    }
+    led_all_off();
 }
 
 void suspend_wakeup_init_action(void)
 {
-    if (BLE51_PowerState >=4) {
-        if (is_980c) {
-            PORTD |= (1<<7);
-            PORTB |= (1<<6 |1<<5);
-        } else {
-            PORTB &= ~(1<<6 |1<<5);
-        }
-        _delay_ms(400);
+    if (BT_POWERED == 0) {
+        matrix_start_delay_timer = 200; // matrix board works delay
         display_connection_status_check_times = 1;
     }
 }
 
-void ble51_task_user(void)
+void hook_keyboard_loop()
 {
-    static uint8_t ble51_task_steps = 0;
+    if (BLE51_PowerState > 1) return;
+    static uint8_t steps = 0;
     static uint16_t battery_timer = 0;
-    if (timer_elapsed(battery_timer) > 150) {
+    if (timer_elapsed(battery_timer) > 160) {
         battery_timer = timer_read();
-        ble51_task_steps++;
-        if (low_battery) {
-            if (ble51_task_steps > 3) {
-                ble51_task_steps = (low_battery == 1)? 3:0; //value 1 is extremely low battery
-                if (PINE&(1<<PE2)) { //not charging
-                    if (PORTB & (1<<6)) {
-                        PORTB &= ~(1<<6 |1<<5);  //660c on, 980c off
-                        if (is_980c) PORTD &= ~(1<<7); //980c led1 off
+
+        // all led, default off.
+        led_all_off();
+
+        // low_battery and display_connection_status when ble51_on
+        if (ble51_boot_on && (low_battery || display_connection_status_check_times)) {
+            // 320ms on,320ms off. bt connected: 320ms*3 on, 320ms off.
+            if (low_battery) {
+                if (steps & 0b10) {
+                    if (is_980c) {
+                        PORTD |= (1<<7);
+                        PORTB |= (1<<6 | 1<<5);
                     } else {
-                        PORTB |= (1<<6 |1<<5); //660c off, 980c on
-                        if (is_980c) PORTD |= (1<<7);
+                        PORTB &= ~(1<<6 | 1<<5);
+                    }
+                }
+            } else {
+                if (bt_connected) {
+                    if (steps & 0b110) {
+                        if (is_980c) PORTB |= (1<<6 | 1<<5);
+                        else PORTB &= ~(1<<6 | 1<<5);
                     }
                 } else {
-                    low_battery = 0;
-                    suspend_wakeup_init_action();
+                    if (steps & 0b10) {
+                        if (is_980c) PORTB |= (1<<5);
+                        else PORTB &= ~(1<<6 | 1<<5);
+                    }
                 }
             }
-        } else if (display_connection_status_check_times) {
-            if (ble51_task_steps == 1) {
-                if (is_980c) {
-                    PORTB &= ~(1<<6 | 1<<5);
-                } else {
-                    PORTB |= (1<<6 | 1<<5);
-                }
+        } else {
+            if (host_keyboard_leds() &  (1<<USB_LED_NUM_LOCK)) {
+                if (is_980c) PORTD |= (1<<7);
             }
-            if (ble51_task_steps == 3) {
-                if (is_980c) {
-                    PORTB |= (1<<5);
-                    if (bt_connected) PORTB |= (1<<6);
-                } else {
-                    PORTB &= ~(1<<6 | 1<<5);
-                }
+    
+            if (host_keyboard_leds() &  (1<<USB_LED_CAPS_LOCK)) {
+                if (is_980c) PORTB |= (1<<6);
+                else PORTB &= ~(1<<5);
             }
-            if ( (!bt_connected && ble51_task_steps >= 5) || ble51_task_steps >= 11 ) {
-                ble51_task_steps = 0;
+    
+            if (host_keyboard_leds() &  (1<<USB_LED_SCROLL_LOCK)) {
+                if (is_980c) PORTB |= (1<<5);
+                else PORTB &= ~(1<<6);
             }
         }
+        steps++;
     }
+}
+
+void bootmagic_lite(void)
+{
+    //do nothing
+    return;
+}
+
+void hook_nkro_change(void)
+{
+    return;
+    uint8_t kbd_nkro = ble51_usb_nkro;
+    type_num(kbd_nkro?6:0);
 }

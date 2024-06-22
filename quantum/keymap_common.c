@@ -43,8 +43,10 @@ action_t action_for_key(uint8_t layer, keypos_t key) {
 };
 
 action_t action_for_keycode(uint16_t keycode) {
+#ifndef RECORE //disable for BLE51
     // keycode remapping
     keycode = keycode_config(keycode);
+#endif
 
     action_t action = {};
     uint8_t  action_layer, mod;

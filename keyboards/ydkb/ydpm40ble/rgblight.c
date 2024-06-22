@@ -364,7 +364,6 @@ void suspend_wakeup_init_action(void)
 {
     rgblight_init();
     DDRC |= (1<<7);
-    if (BLE51_PowerState >= 4) display_connection_status_check_times = 1;
 }
 
 void hook_keyboard_loop()

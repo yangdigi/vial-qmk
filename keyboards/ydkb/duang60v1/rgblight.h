@@ -6,7 +6,7 @@
 #endif
 
 #ifndef RGBLIGHT_EFFECT_SNAKE_LENGTH
-#define RGBLIGHT_EFFECT_SNAKE_LENGTH 4
+#define RGBLIGHT_EFFECT_SNAKE_LENGTH 2
 #endif
 
 #ifndef RGBLIGHT_EFFECT_KNIGHT_LENGTH
@@ -21,7 +21,7 @@
 #endif
 
 #ifndef RGBLIGHT_HUE_STEP
-#define RGBLIGHT_HUE_STEP 20
+#define RGBLIGHT_HUE_STEP 7
 #endif
 #ifndef RGBLIGHT_SAT_STEP
 #define RGBLIGHT_SAT_STEP 17
@@ -40,21 +40,22 @@
 typedef union {
   uint32_t raw;
   struct {
-    uint16_t hue     :10;
-    uint16_t enable  :1;
-    uint16_t mode    :5;
-    uint8_t  sat     :8;
-    uint8_t  val     :8;
+    uint8_t enable  :1;
+    uint8_t mode    :7;
+    uint8_t hue     :8;
+    uint8_t sat     :8;
+    uint8_t val     :8;
   };
 } rgblight_config_t;
 
+void rgblight_clear(void);
 void rgblight_init(void);
 void rgblight_action(uint8_t action);
 void rgblight_toggle(void);
 void sw_bottom_sync_toggle(void);
 void rgblight_mode(int8_t mode);
 void rgblight_set(void);
-void rgblight_sethsv(uint16_t hue, uint8_t sat, uint8_t val);
+void rgblight_sethsv(uint8_t hue, uint8_t sat, uint8_t val);
 void rgblight_setrgb(uint8_t r, uint8_t g, uint8_t b);
 
 uint32_t eeconfig_read_rgblight(void);
@@ -62,11 +63,10 @@ void eeconfig_write_rgblight(uint32_t val);
 void eeconfig_write_rgblight_default(void);
 void eeconfig_debug_rgblight(void);
 
-void sethsv(uint16_t hue, uint8_t sat, uint8_t val, struct cRGB *led1);
+void sethsv(uint8_t hue, uint8_t sat, uint8_t val, struct cRGB *led1);
 void setrgb(uint8_t r, uint8_t g, uint8_t b, struct cRGB *led1);
-void rgblight_sethsv_noeeprom(uint16_t hue, uint8_t sat, uint8_t val);
+void rgblight_sethsv_noeeprom(uint8_t hue, uint8_t sat, uint8_t val);
 
-void rgblight_clear(void);
 void rgblight_timer_init(void);
 void rgblight_timer_enable(void);
 void rgblight_timer_disable(void);

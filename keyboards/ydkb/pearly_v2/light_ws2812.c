@@ -21,7 +21,6 @@ void ws2812_setleds(struct cRGB *ledarray)
     //_delay_us(50);
 }
 
-
 // Timing in ns
 #define w_zeropulse   350
 #define w_onepulse    900

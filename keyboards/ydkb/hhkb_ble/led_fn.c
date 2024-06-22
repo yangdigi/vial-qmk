@@ -23,8 +23,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "command.h"
 #include "ble51.h"
 
-extern bool is_980c;
+void led_all_off(void) {
+    DDRF  |=  (1<<PF4 |1<<PF1 | 1<<PF0);
+    PORTF &= ~(1<<PF4 |1<<PF1 | 1<<PF0);
+}
 
+#if 0
 void led_set_user(uint8_t usb_led)
 {
 
@@ -37,31 +41,40 @@ void led_set_user(uint8_t usb_led)
         PORTF &= ~(1<<1 | 1<<0);
     }
 }
+#endif
 
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
-        switch (keycode) {
-            case USER00:
-                command_extra(KC_U);
-                break;
-            case USER01: //RESET
-                command_extra(KC_B);
-                break;
-            case USER02: //BATTERY LEVEL
-                command_extra(KC_V);
-                break;
-            case USER03: //LOCK MODE
-                command_extra(KC_L); 
-                break;
-            case USER04:
-                if (PORTF & (1<<PF7)) {
-                    DDRF  |=  (1<<PF7);
-                    PORTF &= ~(1<<PF7);
-                } else {
-                    DDRF  &= ~(1<<PF7);
-                    PORTF |=  (1<<PF7);
-                }
-                break;
-        }
+        static const uint8_t userx_to_command[4] = {
+            KC_U, // 0 Host Switch 
+            KC_B, // 1 Reset
+            KC_V, // 2 Output Battery Value
+            KC_L  // 3 Lock Mode
+        };
+        if (keycode >= USER00 && keycode < USER04) command_extra(userx_to_command[keycode-USER00]);
+        else if (keycode == USER04) DDRF ^= (1<<7);
     }
+    #if 0
+    static uint8_t mod_keys_registered;
+    uint8_t pressed_mods = get_mods();
+    switch (keycode) {
+        // 0x5f8f for Alt+Esc=f4 and RShift+Esc=~
+        case 0x5F8F:
+            if (record->event.pressed) {
+                if ((pressed_mods & MOD_BIT(KC_RSHIFT)) && (~pressed_mods & MOD_BIT(KC_LCTRL))) {
+                    mod_keys_registered = KC_GRV;
+                } else if (pressed_mods & MOD_BIT(KC_LALT)) {
+                    mod_keys_registered = KC_F4;
+                } else {
+                    mod_keys_registered = KC_ESC;
+                }
+                register_code(mod_keys_registered);
+                send_keyboard_report();
+            } else {
+                unregister_code(mod_keys_registered);
+                send_keyboard_report();
+            }
+            break;
+    }
+    #endif
 }

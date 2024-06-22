@@ -11,7 +11,11 @@
 
 #include "keymap_introspection.h"
 
+#ifdef FLASH_KEYMAP8_COUNT
+#define NUM_KEYMAP_LAYERS ((uint8_t)(sizeof(keymaps8) / ((MATRIX_ROWS) * (MATRIX_COLS))))
+#else
 #define NUM_KEYMAP_LAYERS ((uint8_t)(sizeof(keymaps) / ((MATRIX_ROWS) * (MATRIX_COLS) * sizeof(uint16_t))))
+#endif
 
 uint8_t keymap_layer_count(void) {
     return NUM_KEYMAP_LAYERS;

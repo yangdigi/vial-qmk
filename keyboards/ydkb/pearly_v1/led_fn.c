@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ble51.h"
 #include "rgblight.h"
 
-
+#if 0
 void led_set_user(uint8_t usb_led)
 {
     if (usb_led & (1<<USB_LED_CAPS_LOCK)) {
@@ -37,25 +37,18 @@ void led_set_user(uint8_t usb_led)
         PORTB &= ~(1<<1);
     }
 }
-
+#endif
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
-        switch (keycode) {
-            case USER00:
-                command_extra(KC_U);
-                break;
-            case USER01: //RESET
-                command_extra(KC_B);
-                break;
-            case USER02: //BATTERY LEVEL
-                command_extra(KC_V);
-                break;
-            case USER03: //LOCK MODE
-                command_extra(KC_L); 
-                break;
-            case USER04 ... USER12:
-                rgblight_action(keycode - USER04);
-                break;
+        static const uint8_t userx_to_command[4] = {
+            KC_U, // 0 Host Switch 
+            KC_B, // 1 Reset
+            KC_V, // 2 Output Battery Value
+            KC_L  // 3 Lock Mode
+        };
+        if (keycode >= USER00) {
+            if (keycode < USER04) command_extra(userx_to_command[keycode-USER00]);
+            else if (keycode <= USER12) rgblight_action(keycode - USER04);
         }
     }
 }

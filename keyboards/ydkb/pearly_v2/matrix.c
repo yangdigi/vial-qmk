@@ -1,30 +1,37 @@
-#include <stdint.h>
-#include <stdbool.h>
-#include <avr/eeprom.h>
-#include <avr/pgmspace.h>
-#include <util/delay.h>
-#include <avr/wdt.h>
-#include "avr_config.h"
+/*
+Copyright 2023 YANG <drk@live.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
+ * scan matrix
+ */
+#include "wait.h"
+#include "action_layer.h"
 #include "print.h"
 #include "debug.h"
 #include "util.h"
-#include "action.h"
-#include "command.h"
-#include "keyboard.h"
 #include "timer.h"
 #include "matrix.h"
+#include "debounce_pk.h"
 #include "suspend.h"
-#include "lufa.h"
 #include "rgblight.h"
 #include "ble51.h"
-#include "ble51_task.h"
-#define DEBOUNCE_DN_MASK (uint8_t)(~(0x80 >> 5))
-#define DEBOUNCE_UP_MASK (uint8_t)(0x80 >> 5)
 
-bool is_ble_version = 1;
 
-extern rgblight_config_t rgblight_config;
-
+/* matrix state(1:on, 0:off) */
 static matrix_row_t matrix[MATRIX_ROWS] = {0};
 
 static uint16_t matrix_scan_timestamp = 0;
@@ -47,17 +54,6 @@ void matrix_scan_kb(void) {
     hook_keyboard_loop();
 }
 
-inline
-uint8_t matrix_rows(void)
-{
-    return MATRIX_ROWS;
-}
-
-inline
-uint8_t matrix_cols(void)
-{
-    return MATRIX_COLS;
-}
 
 void hook_early_init()
 {
@@ -71,6 +67,7 @@ void hook_early_init()
         if ((~PINB & (1<<3))) ble51_boot_on = 0;
         //BLE Reset
         if (ble_reset_key == 0xBBAA) {
+            ble_reset_key = 0;
             if (ble51_boot_on) {
                 // PD3,TX_MCU to RX_51
                 DDRD  |=  (1<<3 );
@@ -80,7 +77,7 @@ void hook_early_init()
                 DDRB  |= (1<<2);
                 PORTB |= (1<<2);
                 _delay_ms(5000);
-                bootloader_jump(); 
+                bootloader_jump();
             }
         }
     }
@@ -89,26 +86,27 @@ void hook_early_init()
 void matrix_init(void)
 {
     DDRB  |=  (1<<2);
-    PORTB &= ~(1<<2);
+    //PORTB &= ~(1<<2);
     init_cols();
     rgblight_init();
 }
 
 uint8_t matrix_scan(void)
 {
-    
     uint16_t time_check = timer_read();
     if (matrix_scan_timestamp == time_check) return 1;
     matrix_scan_timestamp = time_check;
 
+    uint8_t matrix_keys_down = 0;
+
     uint8_t *debounce = &matrix_debouncing[0][0];
-    for (uint8_t row=0; row<matrix_rows(); row++) {
+    for (uint8_t row=0; row<MATRIX_ROWS; row++) {
         select_row(row);
         _delay_us(6);
-        for (uint8_t col=0; col<matrix_cols(); col++, *debounce++) {
+        for (uint8_t col=0; col<MATRIX_COLS; col++, *debounce++) {
             uint8_t key = get_key(col);
             *debounce = (*debounce >> 1) | key;
-            
+
             //if ((*debounce > 0) && (*debounce < 255)) {
             if (1) {
                 matrix_row_t *p_row = &matrix[row];
@@ -119,16 +117,18 @@ uint8_t matrix_scan(void)
                     *p_row &= ~col_mask;
                 }
             } 
+            if (*debounce) matrix_keys_down++;
         }
-        if (matrix[row] > 0) {
-            if (!rgblight_config.enable) kb_idle_times = 12; 
-            else kb_idle_times = 0;
-        }
-        //unselect_rows();
     }
-    
+
+    if (matrix_keys_down) {
+        if (BLE_LIGHT_ON == 0) kb_idle_times = 12;
+        else kb_idle_times = 0;
+    }
+        //unselect_rows();
+
     matrix_scan_quantum();
-    return 1;
+    return matrix_keys_down;
 }
 
 
@@ -146,10 +146,10 @@ matrix_row_t matrix_get_row(uint8_t row)
 
 void matrix_print(void)
 {
-    print("\nr/c 01234567\n");
+    print("\nr/c 0123456789ABCDEF\n");
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         print_hex8(row); print(": ");
-        print_bin_reverse8(matrix_get_row(row));
+        print_bin_reverse16(matrix_get_row(row));
         print("\n");
     }
 }
@@ -172,7 +172,7 @@ static const struct AVR_PINS row_PIN[] = {PF(4), PF(1), PF(0), PE(6)};
  */
 static void  init_cols(void)
 {
-    for (uint8_t col=0; col<matrix_cols(); col++) {
+    for (uint8_t col=0; col<MATRIX_COLS; col++) {
         _SFR_IO8(col_PIN[col].pin + 1) &= ~col_PIN[col].mask;
         _SFR_IO8(col_PIN[col].pin + 2) |=  col_PIN[col].mask;
     }
@@ -198,7 +198,7 @@ void unselect_rows(void)
 
 static void select_row(uint8_t row)
 {
-    for (uint8_t i=0; i<matrix_rows(); i++) {
+    for (uint8_t i=0; i<MATRIX_ROWS; i++) {
         if (row == i || row == 0xff) _SFR_IO8(row_PIN[i].pin + 1) |= row_PIN[i].mask;
         else _SFR_IO8(row_PIN[i].pin+1) &= ~row_PIN[i].mask;
     }
@@ -207,19 +207,14 @@ static void select_row(uint8_t row)
 bool suspend_wakeup_condition(void)
 {
     if (BLE51_PowerState >= 10) {
-        matrix_scan();
-        // K14 F, K17 J
-        uint8_t *debounce = &matrix_debouncing[0][0];
-        uint8_t matrix_keys_down = 0;
-        for (uint8_t i=0; i< MATRIX_ROWS * MATRIX_COLS; i++, *debounce++) {
-            if (*debounce > 0) {
-                if (i == KP(1,4) || i == KP(1,7)) matrix_keys_down += 100;
-                else matrix_keys_down++;
-            }
+        uint8_t matrix_keys_down = matrix_scan();
+        if (matrix_keys_down == 2) {
+            // K14 F, K17 J
+            if (matrix_debouncing[1][4] == 0xff && matrix_debouncing[1][7] == 0xff) return true;
         }
-        if (matrix_keys_down == 200) {
-            return true;
-        } else if (!ble51_boot_on && matrix_keys_down) return true;
+        if (!ble51_boot_on) return true;
+        return false;
+
     } else {
         select_all_rows();
         _delay_us(6);
@@ -231,3 +226,18 @@ bool suspend_wakeup_condition(void)
     }
     return false;
 }
+
+void bootmagic_lite(void)
+{
+    //do nothing
+    return;
+
+}
+
+void hook_nkro_change(void)
+{
+    return;
+    uint8_t kbd_nkro = keymap_config.nkro;
+    type_num(kbd_nkro?6:0);
+}
+

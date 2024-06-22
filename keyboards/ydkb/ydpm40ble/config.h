@@ -3,14 +3,19 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER          QMK_DMCO
-#define FW_VER_VIA      VIA_DMCO
-#define FW_VER_VIAL     VIAL_DMCO
+#define FW_VER_DATE     DO6A
+#define CONTACT(x,y)    x##y //https://blog.csdn.net/aiynmimi/article/details/123486956
+#define CONTACT2(x,y)   CONTACT(x,y)
+#define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
 #define VENDOR_ID       0x9D5B 
 #define PRODUCT_ID      0x1848
 #define DEVICE_VER      0x0001
 #define MANUFACTURER    YDKB
+#if CONSOLE_ENABLE
+#define PRODUCT         YDPM40BLE Debug (FW_VER)
+#else
 #define PRODUCT         YDPM40BLE (FW_VER)
+#endif
 
 
 #define MATRIX_ROWS 8
@@ -68,9 +73,10 @@
 #endif
 /* BT Power Control */
 #define BT_POWERED    (~PORTD & (1<<5))
-#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5);} while(0)
-#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B &= ~(1<<TXEN1); } while(0)
-#define turn_on_bt()    do { PORTD &= ~(1<<5); UCSR1B |= (1<<TXEN1);} while(0)
+#define bt_power_init()    do { DDRD |= (1<<5); PORTD &= ~(1<<5); } while(0)
+#define bt_power_reset()    do {PORTD |= (1<<5); WAIT_MS(100); PORTD &= ~(1<<5);} while(0)
+#define turn_off_bt()    do { PORTD |= (1<<5); UCSR1B = (1<<RXCIE1 | 1<<RXEN1); } while(0)
+#define turn_on_bt()    do { PORTD &= ~(1<<5); if (UCSR1B == (1<<RXCIE1 | 1<<RXEN1)) WAIT_MS(200); UCSR1B = (1<<RXCIE1 | 1<<RXEN1 | 1<<TXEN1); } while(0)
 
 #define BLE_NAME "YDPM40BLE"
 #define BLE_BATTERY_SERVICE
@@ -89,6 +95,7 @@
 /* disable action features */
 //#define NO_ACTION_LAYER
 //#define NO_ACTION_TAPPING
-//#define NO_ACTION_ONESHOT
+//#define NO_ACTION_ONESHOT  //930B
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
+#define NO_DEFAULT_COMMAND

@@ -33,6 +33,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #endif
 
+#ifdef RECORE
+#define IS_NKRO() (keyboard_protocol == 1 && keymap_config.nkro)
+#else
+#define IS_NKRO() (keyboard_protocol && keymap_config.nkro)
+#endif
+
 extern uint8_t keyboard_idle;
 extern uint8_t keyboard_protocol;
 

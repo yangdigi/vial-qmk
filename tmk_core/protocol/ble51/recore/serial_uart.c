@@ -38,8 +38,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdbool.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "protocol/serial.h"
+#include "serial.h"
 
+#ifndef NOT_BLE
 
 #if defined(SERIAL_UART_RTS_LO) && defined(SERIAL_UART_RTS_HI)
     // Buffer state
@@ -76,7 +77,8 @@ uint8_t serial_recv(void)
     }
 
     data = rbuf[rbuf_tail];
-    rbuf_tail = (rbuf_tail + 1) % RBUF_SIZE;
+    //rbuf_tail = (rbuf_tail + 1) % RBUF_SIZE;
+    rbuf_tail = (rbuf_tail + 1) & 0xff;
     rbuf_check_rts_lo();
     return data;
 }
@@ -89,7 +91,8 @@ int16_t serial_recv2(void)
     }
 
     data = rbuf[rbuf_tail];
-    rbuf_tail = (rbuf_tail + 1) % RBUF_SIZE;
+    //rbuf_tail = (rbuf_tail + 1) % RBUF_SIZE;
+    rbuf_tail = (rbuf_tail + 1) & 0xff;
     rbuf_check_rts_lo();
     return data;
 }
@@ -103,10 +106,13 @@ void serial_send(uint8_t data)
 // USART RX complete interrupt
 ISR(SERIAL_UART_RXD_VECT)
 {
-    uint8_t next = (rbuf_head + 1) % RBUF_SIZE;
+    //uint8_t next = (rbuf_head + 1) % RBUF_SIZE;
+    uint8_t next = (rbuf_head + 1) & 0xff;
     if (next != rbuf_tail) {
         rbuf[rbuf_head] = SERIAL_UART_DATA;
         rbuf_head = next;
     }
     rbuf_check_rts_hi();
 }
+
+#endif

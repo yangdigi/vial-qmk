@@ -65,7 +65,11 @@ led_t host_keyboard_led_state(void) {
 void host_keyboard_send(report_keyboard_t *report) {
     if (!driver) return;
 #if defined(NKRO_ENABLE) && defined(NKRO_SHARED_EP)
+#ifndef RECORE
     if (keyboard_protocol && keymap_config.nkro) {
+#else
+    if (IS_NKRO()) {
+#endif
         /* The callers of this function assume that report->mods is where mods go in.
          * But report->nkro.mods can be at a different offset if core keyboard does not have a report ID.
          */
