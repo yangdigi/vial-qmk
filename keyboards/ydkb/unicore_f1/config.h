@@ -1,10 +1,9 @@
-
 #pragma once
 
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER_DATE     DO59
+#define FW_VER_DATE     DO6N
 #define CONTACT(x,y)    x##y
 #define CONTACT2(x,y)   CONTACT(x,y)
 #define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
@@ -19,11 +18,12 @@
 #endif
 
 #define USB_MAX_POWER_CONSUMPTION 350
+#define WAIT_FOR_USB
 
 /* key matrix size */
 #define MATRIX_ROWS 14 //max supported
 #define MATRIX_COLS 8
-#define FORCE_NKRO
+//#define FORCE_NKRO //When FORCE_NKRO, Enable NKRO in QMK Settings will not be saved
 #define SOFTWARE_ESC_BOOTLOADER
 
 #define RGBLIGHT_EFFECT_BREATHING

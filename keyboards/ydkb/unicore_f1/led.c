@@ -72,6 +72,10 @@ void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
 #endif
 
     memcpy(&rgbled[INDICATOR_NUM], start_led, RGBLED_NUM*3);
+#ifdef RGB_ORDER_FIX
+    rgb_order_fix(rgbled);
+#endif
+
     if (!welcome_light_on) ws2812_setleds(rgbled, INDICATOR_NUM+RGBLED_NUM);
 }
 
@@ -93,6 +97,7 @@ void led_set_user(uint8_t usb_led)
         indicator_state |= (1<<2);
     }
 #endif
+    // 固定颜色模式下，更新一次。否则在关闭led时，指示灯颜色未更新。
     if (rgblight_config.mode == 1) rgblight_mode_noeeprom(rgblight_config.mode);
     rgblight_set(); //set rgb even when rgblight.enable=0
 }
@@ -159,6 +164,10 @@ bool command_extra(uint8_t code)
             return false;   // yield to default command
     }
     return true;
+}
+
+void restart_usb_driver(USBDriver *usbp) {
+    NVIC_SystemReset();
 }
 
 //rgblight welcome

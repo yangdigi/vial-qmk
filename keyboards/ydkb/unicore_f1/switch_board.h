@@ -23,7 +23,9 @@ static inline void KEY_SDI_ON(void) {
 }
 
 static inline void get_key_ready(void) {
+    // PB13 input
     palSetPadMode(GPIOB, 13, PAL_MODE_INPUT_PULLUP);
+    // PB13 PB14 pull up
     palSetPad(GPIOB, 13);
 }
 
@@ -32,6 +34,7 @@ static inline void select_key_ready(void) {
 } 
 
 //SCK PB12
+//asm("nop");
 #define CLOCK_PULSE() \
     do { \
         palSetPad(GPIOB, 12); \
