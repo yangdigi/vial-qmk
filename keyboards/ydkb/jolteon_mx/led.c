@@ -116,3 +116,7 @@ bool command_extra(uint8_t code)
     return true;
 }
 
+void restart_usb_driver(USBDriver *usbp) {
+    NVIC_SystemReset();
+}
+
