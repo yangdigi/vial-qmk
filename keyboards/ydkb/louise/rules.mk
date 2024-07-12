@@ -6,7 +6,7 @@ F_CPU = 8000000
 
 # Bootloader selection
 BOOTLOADER = lufa-ms
-BOOTLOADER_SIZE = 6400
+BOOTLOADER_SIZE = 6144
 
 # Build Options
 #   change yes to no to disable
