@@ -223,3 +223,33 @@ void hook_keyboard_loop(void) {
         }
     }
 }
+
+// Snap Tap / SOCD
+static const SOCD_KEY[2][2] = {
+    { KC_W, KC_S },
+    { KC_A, KC_D }
+};
+
+bool socd_key_state[2][2] = { {0,0},{0,0}};
+
+void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (keycode >= USER00 && keycode <= USER03) {
+        uint8_t key = keycode - USER00;
+        uint8_t k_group = key&1;
+        uint8_t k_num = key>>1;
+        uint8_t k_op_num = k_num?0:1;
+        if (record->event.pressed) {
+            socd_key_state[k_group][k_num] = 1;
+            if (socd_key_state[k_group][k_op_num]) {
+                unregister_code(SOCD_KEY[k_group][k_op_num]);
+            }
+            register_code(SOCD_KEY[k_group][k_num]);
+        } else {
+            socd_key_state[k_group][k_num] = 0;
+            unregister_code(SOCD_KEY[k_group][k_num]);
+            if (socd_key_state[k_group][k_op_num]) {
+                register_code(SOCD_KEY[k_group][k_op_num]);
+            }
+        }
+    }
+}
