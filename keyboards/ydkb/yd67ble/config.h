@@ -5,6 +5,9 @@
 
 /* USB Device descriptor parameter */
 #define FW_VER_DATE     DO6M
+#define CONTACT(x,y)    x##y //https://blog.csdn.net/aiynmimi/article/details/123486956
+#define CONTACT2(x,y)   CONTACT(x,y)
+#define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
 #define VENDOR_ID       0x9D5B
 #define PRODUCT_ID      0x2167
 #define DEVICE_VER      0x0011
