@@ -313,7 +313,6 @@ static void send_keyboard(report_keyboard_t *report)
                 //kb_idle_times = 0; 
             }
         }
-        _delay_us(15); 
 #else 
         if (memcmp(ble51_cmd(ble51_buf), "ERROR", 5) == 0) {
             report_error = 1;

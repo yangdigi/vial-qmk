@@ -425,6 +425,7 @@ bool command_extra(uint8_t code)
 {
     uint8_t pressed_mods = get_mods();
     clear_keyboard();
+    WAIT_MS(30); // 防止 LShift+RShift+L时，Shift未弹起。
     switch (code) {
 #ifndef NOT_BLE
         case KC_U:

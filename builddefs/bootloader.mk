@@ -133,6 +133,7 @@ ifeq ($(strip $(BOOTLOADER)), lufa-ms)
     BOOTLOADER_TYPE = dfu
 
     BOOTLOADER_SIZE ?= 8192
+    RESERVE_SIZE ?= 0
     FIRMWARE_FORMAT = bin
 cpfirmware: lufa_warning
 .INTERMEDIATE: lufa_warning
