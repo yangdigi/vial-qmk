@@ -317,6 +317,8 @@ void update_battery(uint8_t mode) {
     if (debug_config.enable == 0 && mode == 0) return;
 #endif
 
+    uint8_t battery_level = 44;
+
     const char *result = ble51_cmd("AT+HWADC=6\n");
     /* simple calculate batt level 
      * Char "0"->"9" = 0x30->0x39 Char "O"=0x4F. atol() needs more space.
@@ -358,12 +360,10 @@ void update_battery(uint8_t mode) {
             }
         #endif
         #ifdef BLE51_NO_ULTRA_LOW_BATTERY
-            low_battery = (battery_calc_u8 < U8V(3550))? 5:0;
-        #else
-            if (battery_calc_u8 > U8V(3600)) low_battery = 0;
-            else if (battery_calc_u8 < U8V(3420)) low_battery = 1;  //Ultra low battery
-            else if (battery_calc_u8 < U8V(3550)) low_battery = 5;
+            if (battery_calc_u8 < U8V(3420)) battery_level = 1;  //Ultra low battery
+            else 
         #endif
+            if (battery_calc_u8 < U8V(3550)) battery_level = 5;
         }
     }    
 
@@ -371,7 +371,6 @@ void update_battery(uint8_t mode) {
 #ifdef BLE_BATTERY_SERVICE
     if (mode == 1) {
         /* Calculate battery level */
-        uint8_t battery_level = 44;
         uint8_t i = 0;
         for (uint8_t j = 90; j > 0; j -= 10) {
             if (battery_level_value[i++] <= battery_calc_u8) { 
@@ -379,7 +378,6 @@ void update_battery(uint8_t mode) {
                 break;
             }
         }
-        if (low_battery) battery_level = low_battery;
 
 #ifdef UPDATE_BATTERY_WHEN_CHARGING
         battery_level += is_charging; //+1 when is_charging
@@ -395,6 +393,8 @@ void update_battery(uint8_t mode) {
         update_battery_value();
     }
 #endif
+    // Low Battery
+    low_battery = (battery_level <= 5)? battery_level : 0;
 }
 
 
