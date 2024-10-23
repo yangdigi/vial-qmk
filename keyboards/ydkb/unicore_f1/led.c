@@ -225,7 +225,7 @@ void hook_keyboard_loop(void) {
 }
 
 // Snap Tap / SOCD
-static const SOCD_KEY[2][2] = {
+static const uint8_t SOCD_KEY[2][2] = {
     { KC_W, KC_S },
     { KC_A, KC_D }
 };
