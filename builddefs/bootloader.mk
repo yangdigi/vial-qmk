@@ -46,6 +46,8 @@
 # BOOTLOADER_SIZE can still be defined manually, but it's recommended
 # you add any possible configuration to this list
 
+RESERVE_SIZE ?= 0
+
 ifeq ($(strip $(BOOTLOADER)), custom)
     OPT_DEFS += -DBOOTLOADER_CUSTOM
     BOOTLOADER_TYPE = custom
@@ -120,7 +122,7 @@ ifneq (,$(filter $(BOOTLOADER), bootloadhid bootloadHID))
     OPT_DEFS += -DBOOTLOADER_BOOTLOADHID
     BOOTLOADER_TYPE = bootloadhid
 
-    BOOTLOADER_SIZE = 4096
+    BOOTLOADER_SIZE ?= 4096
 endif
 ifneq (,$(filter $(BOOTLOADER), usbasploader USBasp))
     OPT_DEFS += -DBOOTLOADER_USBASP
@@ -133,7 +135,6 @@ ifeq ($(strip $(BOOTLOADER)), lufa-ms)
     BOOTLOADER_TYPE = dfu
 
     BOOTLOADER_SIZE ?= 8192
-    RESERVE_SIZE ?= 0
     FIRMWARE_FORMAT = bin
 cpfirmware: lufa_warning
 .INTERMEDIATE: lufa_warning

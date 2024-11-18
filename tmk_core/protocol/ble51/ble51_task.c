@@ -309,7 +309,10 @@ void update_battery(uint8_t mode) {
     /* mode 0: not update bat_value, only get voltage and calc low_battery. */
 
     /*only update when light is off.*/
-#ifdef BLE_LIGHT_ON
+#if defined(RGBLIGHT_ON)
+    if (RGBLIGHT_ON && mode == 0) return;
+
+#elif defined(BLE_LIGHT_ON)
     if (BLE_LIGHT_ON && mode == 0) return;
 #endif
 
