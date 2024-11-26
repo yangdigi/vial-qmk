@@ -34,3 +34,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     {KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO}
   }, 
 };
+
+#include "led.h"
+#include "rgblight.h"
+extern uint8_t indicator_color_config[3];
+void rgb_extra_process(LED_TYPE *rgbled) {
+    if (indicator_color_config[2] & 1) {
+        for (uint8_t i=2; i<6; i++) {
+            rgbled[i] = rgbled[0];
+        }
+    }
+}

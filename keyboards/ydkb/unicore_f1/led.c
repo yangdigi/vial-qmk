@@ -23,83 +23,76 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "stdint.h"
 #include "quantum.h"
 
+#ifndef LOGIC_INDICATOR_NUM
+#define LOGIC_INDICATOR_NUM PHY_INDICATOR_NUM
+#endif
+
 extern rgblight_config_t rgblight_config;
-static LED_TYPE RGBLIGHT_COLOR_OFF   = { .r = 0, .g = 0, .b = 0 };
+extern bool is_sc_leds_mcu;
+
+static LED_TYPE RGBLIGHT_COLOR_OFF = { .r = 0, .g = 0, .b = 0 };
 uint8_t indicator_state = 0;
+uint8_t indicator_color_config[3];
+LED_TYPE indicator_color[3];
+
 #ifdef WELCOME_LIGHT
 uint8_t welcome_light_on = 10;
 #else
 uint8_t welcome_light_on = 0;
 #endif
 
-LED_TYPE rgbled[INDICATOR_NUM+RGBLED_NUM];
+LED_TYPE rgbled[PHY_INDICATOR_NUM+RGBLED_NUM];
 
+void single_color_indicator_set(uint8_t index, bool on)
+{
+    if (index == 0) {
+        if (on) palSetPad(GPIOB, 14);
+        else palClearPad(GPIOB, 14);
+    } else if (index == 1) {
+        if (on) palSetPad(GPIOA, 8);
+        else palClearPad(GPIOA, 8);
+    }
+}
 void rgblight_call_driver(LED_TYPE *start_led, uint8_t num_leds) {
     // keep indicator color
-#ifdef INDICATOR_0_FUNCT
-    if (indicator_state & (1<<0)) {
-        #ifdef INDICATOR_0_VAL
-        sethsv(rgblight_config.hue, rgblight_config.sat, INDICATOR_0_VAL, &rgbled[0]);
-        #else
-        rgbled[0] = INDICATOR_0_COLOR;
-        #endif
-        #ifdef INDICATOR_0_INSTRIP
-        start_led[INDICATOR_0_INSTRIP] = rgbled[0];
-        #endif
-    } else {
-        rgbled[0] = RGBLIGHT_COLOR_OFF;
+    for (uint8_t i=0; i<PHY_INDICATOR_NUM; i++) {
+        if (indicator_state & (1<<i)) {
+            rgbled[i] = indicator_color[i];
+            single_color_indicator_set(i, true);
+        } else {
+            rgbled[i] = RGBLIGHT_COLOR_OFF;
+            single_color_indicator_set(i, false);
+        }
     }
-#endif
-#ifdef INDICATOR_1_FUNCT
-    if (indicator_state & (1<<1)) {
-        rgbled[1] = INDICATOR_1_COLOR;
-        #ifdef INDICATOR_1_INSTRIP
-        start_led[INDICATOR_1_INSTRIP] = INDICATOR_1_COLOR;
-        #endif
-    } else {
-        rgbled[1] = RGBLIGHT_COLOR_OFF;
+
+
+    if (is_sc_leds_mcu) {
+        ws2812_setleds(start_led, RGBLED_NUM);
+        return;
     }
-#endif
-#ifdef INDICATOR_2_FUNCT
-    if (indicator_state & (1<<2)) {
-        rgbled[2] = INDICATOR_2_COLOR;
-        #ifdef INDICATOR_2_INSTRIP
-        start_led[INDICATOR_2_INSTRIP] = INDICATOR_2_COLOR;
-        #endif
-    } else {
-        rgbled[2] = RGBLIGHT_COLOR_OFF;
-    }
+
+    memcpy(&rgbled[PHY_INDICATOR_NUM], start_led, RGBLED_NUM*3);
+#ifdef RGB_EXTRA_PROCESS_ENABLE
+    rgb_extra_process(rgbled);
 #endif
 
-    memcpy(&rgbled[INDICATOR_NUM], start_led, RGBLED_NUM*3);
-#ifdef RGB_ORDER_FIX
-    rgb_order_fix(rgbled);
-#endif
-
-    if (!welcome_light_on) ws2812_setleds(rgbled, INDICATOR_NUM+RGBLED_NUM);
+    if (!welcome_light_on) ws2812_setleds(rgbled, PHY_INDICATOR_NUM+RGBLED_NUM);
 }
 
 void led_set_user(uint8_t usb_led)
 {
     indicator_state = 0;
-#ifdef INDICATOR_0_FUNCT
-    if (usb_led & INDICATOR_0_FUNCT) {
-        indicator_state |= (1<<0);
+#ifdef INDICATOR_FUNCT
+    static uint8_t indicator_funct[LOGIC_INDICATOR_NUM] = INDICATOR_FUNCT;
+    for (uint8_t i=0; i<LOGIC_INDICATOR_NUM; i++) {
+        if (usb_led & indicator_funct[i]) {
+            indicator_state |= (1<<i);
+        }
     }
-#endif
-#ifdef INDICATOR_1_FUNCT
-    if (usb_led & INDICATOR_1_FUNCT) {
-        indicator_state |= (1<<1);
-    }
-#endif
-#ifdef INDICATOR_2_FUNCT
-    if (usb_led & INDICATOR_2_FUNCT) {
-        indicator_state |= (1<<2);
-    }
-#endif
     // 固定颜色模式下，更新一次。否则在关闭led时，指示灯颜色未更新。
     if (rgblight_config.mode == 1) rgblight_mode_noeeprom(rgblight_config.mode);
     rgblight_set(); //set rgb even when rgblight.enable=0
+#endif
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -170,17 +163,47 @@ void restart_usb_driver(USBDriver *usbp) {
     NVIC_SystemReset();
 }
 
+void user_config_update(void)
+{
+    static const uint8_t indicator_hue_preset[8] = {0, 21, 42, 85, 127, 170, 212, 255};
+    #ifdef INDICATOR_VAL
+    static uint8_t val = INDICATOR_VAL;
+    #else 
+    static uint8_t val = 255;
+    #endif
+
+    static uint16_t last_value = 0xffff;
+    uint16_t new_value = eeprom_read_word((void *)(VIA_EEPROM_LAYOUT_OPTIONS_ADDR));
+    if (new_value != last_value) {
+        last_value = new_value;
+        for (uint8_t i=0; i<3; i++) {
+            indicator_color_config[i] = (new_value & 0b111);
+            uint8_t hue = indicator_hue_preset[ indicator_color_config[i] ];
+            new_value >>= 3;
+            if (hue == 255) indicator_color[i] = (LED_TYPE){val/2, val/2, val/2};
+            else            indicator_color[i] = hsv_to_rgb((HSV){hue, 255, val});
+            xprintf("\n indicator %d R: %d, G: %d, B:%d", i, indicator_color[i].r, indicator_color[i].g, indicator_color[i].b);
+        }
+    }
+}
+
 //rgblight welcome
 extern rgblight_config_t rgblight_config;
 extern bool is_rgblight_initialized;
 extern LED_TYPE led[];
-void hook_keyboard_loop(void) {
+void hook_keyboard_loop(void)
+{
+    static uint16_t one_second_timer = 0;
+    if (one_second_timer != timer_read() && timer_elapsed(one_second_timer) >= 1000) {
+        one_second_timer = timer_read();
+        user_config_update();
+    }
 #ifndef WELCOME_LIGHT
     return;
 #endif
     //only for taco75
     //ready
-    static LED_TYPE *led = &rgbled[INDICATOR_NUM];
+    static LED_TYPE *led = &rgbled[PHY_INDICATOR_NUM];
     if (welcome_light_on == 10 && is_rgblight_initialized) {
         welcome_light_on = 4;
         rgblight_config.enable = 0;
@@ -207,7 +230,7 @@ void hook_keyboard_loop(void) {
             led[6-i] = led[7+i] = welcome_led_color;
         }
         // force rgb update even rgblight off
-        ws2812_setleds(rgbled, INDICATOR_NUM+RGBLED_NUM);
+        ws2812_setleds(rgbled, PHY_INDICATOR_NUM+RGBLED_NUM);
         if (welcome_step < 7) {
             static uint8_t led_step = 0;
             if (++led_step < 3) return;
