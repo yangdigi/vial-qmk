@@ -66,7 +66,7 @@ static void get_key_ready(void) {
     _delay_us(6);
 }
 
-inline void select_key_ready(void) {
+static inline void select_key_ready(void) {
     DDRB |= (1<<3);
 } 
 
@@ -151,8 +151,11 @@ uint8_t matrix_scan(void)
     }
 
     if (matrix_keys_down) {
+        #if 0
         if (BLE_LIGHT_ON == 0) kb_idle_times = 12;
-        else kb_idle_times = 0;
+        else 
+        #endif
+        kb_idle_times = 0;
     }
 
     matrix_scan_quantum();

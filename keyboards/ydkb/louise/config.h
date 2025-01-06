@@ -3,7 +3,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER_DATE     DO6A
+#define FW_VER_DATE     DP16
 #define CONTACT(x,y)    x##y
 #define CONTACT2(x,y)   CONTACT(x,y)
 #define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
@@ -17,10 +17,10 @@
 #define MATRIX_ROWS 4  //595 num of each side.
 #define MATRIX_COLS 16
 
+#define DEFAULT_6KRO // macOS's Capslock switching between Chinese and English has compatibility issues with NKRO
 
-#define BACKLIGHT_PIN C6
-#define BACKLIGHT_LEVELS 6
-#define BACKLIGHT_ON_STATE 0
+#define BACKLIGHT_LEVELS 1
+#define TAPPING_TOGGLE  3
 
 /* key combination for command */
 #define IS_COMMAND() ( \
@@ -72,12 +72,13 @@
 #define BLE_NAME "Louise BLE"
 #define BLE_BATTERY_SERVICE
 #define BLE_LIGHT_ON (~PORTD & (1<<6)) //RGB Power IO
+#define HARDWARE_BT_SWITCH
 
 #define UPDATE_BATTERY_WHEN_CHARGING
 #define BATTERY_CHARGING (~PINC & (1<<7))
 #define CHARGING_FIX_VALUE 40
 #define CHARGING_STATE_INIT()    do { DDRC &= ~(1<<7); PORTC |= (1<<7);} while(0)
-#define HARDWARE_BT_SWITCH
+
 
 #define BLE51_NO_BATTERY_VOLTAGE
 #define BLE51_NO_ULTRA_LOW_BATTERY
@@ -94,7 +95,8 @@
 /* disable action features */
 //#define NO_ACTION_LAYER
 //#define NO_ACTION_TAPPING
-//#define NO_ACTION_ONESHOT  //930B
+#define NO_ACTION_ONESHOT  //930B
 //#define NO_ACTION_MACRO
 //#define NO_ACTION_FUNCTION
 #define NO_DEFAULT_COMMAND
+#define NO_RESET

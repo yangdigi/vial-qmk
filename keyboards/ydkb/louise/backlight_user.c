@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 void backlight_init_ports(void) {
-    DDRC  &= ~(1<<6);
-    PORTC |=  (1<<6);
+    DDRC  |= (1<<6);
+    //PORTC |=  (1<<6);
 }
 
 void backlight_task(void) {
@@ -34,13 +34,13 @@ void backlight_task(void) {
 void backlight_user_enable(void)
 {
 
-    DDRC  |=  (1<<6);
+    //DDRC  |=  (1<<6);
     PORTC &= ~(1<<6);
 }
 
 void backlight_user_disable(void)
 {
-    DDRC  &= ~(1<<6);
+    //DDRC  &= ~(1<<6);
     PORTC |=  (1<<6);
 }
 

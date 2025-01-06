@@ -27,9 +27,30 @@ struct cRGB *led = &rgbled[INDICATOR_NUM];
 const uint8_t RGBLED_BREATHING_TABLE[64] PROGMEM= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 17, 20, 24, 28, 32, 36, 41, 46, 51, 57, 63, 70, 76, 83, 91, 98, 106, 113, 121, 129, 138, 146, 154, 162, 170, 178, 185, 193, 200, 207, 213, 220, 225, 231, 235, 240, 244, 247, 250, 252, 253, 254, 255};
 
 
-rgblight_config_t rgblight_config = {.enable = 0, .mode = 8,.hue = 640, .sat = 255, .val = 255};
+rgblight_config_t rgblight_config = {.enable = 0, .mode = 8,.hue = 214, .sat = 255, .val = 255};
 
+void sethsv(uint8_t hue, uint8_t saturation, uint8_t brightness, struct cRGB *led1)
+{
+    /*
+    original code: https://blog.adafruit.com/2012/03/14/constant-brightness-hsb-to-rgb-algorithm/
+    use 8bit hue, hue16 = hue*3 to reach 0 to 767.
+    */
+    uint8_t r, g, b;
+    uint8_t temp[5];
+    uint16_t hue16 = hue*3;
 
+    uint8_t n = hue16 >> 8;
+    uint8_t x = ((((hue16 & 255) * saturation) >> 8) * brightness) >> 8;
+    uint8_t s = ((256 - saturation) * brightness) >> 8;
+
+    //temp[n] g r b as struct cRGB of ws2812. save 18B
+    temp[0] = temp[3] = x + s;
+    temp[1] = temp[4] = brightness - x;
+    temp[2] = s;
+    memcpy(led1, &temp[n], 3);
+}
+
+#if 0  // my old code. the new way use 8bit hue saves about 134B
 uint16_t hue_fix(uint16_t hue)
 {
     // hue needs to be 0x100 to 0x3ff
@@ -54,6 +75,7 @@ void sethsv(uint16_t hue, uint8_t saturation, uint8_t brightness, struct cRGB *l
     if (n > 3) return;  // 0 would be error. just leave it.
     uint8_t x = ((((hue & 255) * saturation) >> 8) * brightness) >> 8;
     uint8_t s = ((256 - saturation) * brightness) >> 8;
+#if 0 //temp[n-1] b g r
     temp[0] = temp[3] = s;
     temp[1] = temp[4] = x + s;
     temp[2] = brightness - x;
@@ -61,7 +83,14 @@ void sethsv(uint16_t hue, uint8_t saturation, uint8_t brightness, struct cRGB *l
     g = temp[n];
     b = temp[n - 1];
     setrgb(r,g,b, led1);
+#else //temp[n-1] g r b as struct cRGB of ws2812. save 18B
+    temp[0] = temp[3] = x + s;
+    temp[1] = temp[4] = brightness - x;
+    temp[2] = s;
+    memcpy(led1, &temp[n-1], 3);
+#endif
 }
+#endif
 
 void setrgb(uint8_t r, uint8_t g, uint8_t b, struct cRGB *led1)
 {
@@ -127,13 +156,16 @@ void rgblight_mode(int8_t mode)
 {
     // rgb off, new way to save about 60B
     if (!rgblight_config.enable) {
-        rgblight_clear();
-        rgblight_set();
-        //if (!indicator_state) rgblight_timer_disable();
+        //rgblight_clear();
+        //rgblight_set();
+        rgblight_timer_disable();
     } else {
     // rgb on
+        #if 0 //less than 0 can always be 0. save 8B
         if (mode < 0) mode = RGBLIGHT_MODES - 1;
-        else if (mode >= RGBLIGHT_MODES) mode = 0;
+        else
+        #endif
+        if (mode >= RGBLIGHT_MODES) mode = 0;
         rgblight_config.mode = mode;
         dprintf("rgblight mode: %u\n", rgblight_config.mode);
 
@@ -161,7 +193,7 @@ void rgblight_action(uint8_t action)
     5 sat-     6 sat+
     7 val-     8 val+
     */
-    uint16_t hue = rgblight_config.hue;
+    uint8_t hue = rgblight_config.hue;
     uint8_t sat = rgblight_config.sat;
     uint8_t val = rgblight_config.val;
     int8_t increament = 1;
@@ -195,20 +227,20 @@ void rgblight_action(uint8_t action)
     if (action >= 3) rgblight_sethsv(hue, sat, val);
 }
 
-void rgblight_sethsv_noeeprom(uint16_t hue, uint8_t sat, uint8_t val)
+void rgblight_sethsv_noeeprom(uint8_t hue, uint8_t sat, uint8_t val)
 {
     if (rgblight_config.enable) {
         sethsv(hue, sat, val, &led[RGBLED_TEMP]);
         for (uint8_t i=0; i< RGBLED_NUM; i++) {
             led[i] = led[RGBLED_TEMP];
         }
-        rgblight_set();
+        //rgblight_set();
     }
 }
 
-void rgblight_sethsv(uint16_t hue, uint8_t sat, uint8_t val)
+void rgblight_sethsv(uint8_t hue, uint8_t sat, uint8_t val)
 {
-    hue = hue_fix(hue);
+    //hue = hue_fix(hue);
     if (rgblight_config.enable) {
         #if 0   // will do rgblight_sethsv_noeeprom() in rgblight_task
         if (rgblight_config.mode == 1) {
@@ -232,7 +264,7 @@ void rgblight_setrgb(uint8_t r, uint8_t g, uint8_t b)
         rgbled[i].g = g;
         rgbled[i].b = b;
     }
-    rgblight_set();
+    //rgblight_set();
 }
 
 void rgblight_clear(void)
@@ -276,6 +308,9 @@ void rgblight_task(void)
                 break;
             #endif
         }
+        rgblight_set();
+      } else {
+        rgblight_timer_disable();
       }
     }
 }
@@ -293,26 +328,24 @@ void rgblight_effect_breathing(uint8_t interval)
     }
 }
 
+static uint8_t current_hue = 0;
+
 void rgblight_effect_rainbow_mood(uint8_t interval)
 {
-    static uint16_t current_hue = 0;
     rgblight_sethsv_noeeprom(current_hue, rgblight_config.sat, rgblight_config.val);
-    current_hue = hue_fix(current_hue + interval * 3);
+    current_hue += interval;
 }
 
 void rgblight_effect_rainbow_swirl(uint8_t interval)
 {
-    static uint16_t current_hue=0;
-    uint16_t hue;
-    uint8_t i;
-    uint8_t interval2 = interval/2;
-    if (interval & 1) interval2 *= -1;
-    for (i=0; i<RGBLED_NUM; i++) {
-        hue = 768/16*i+current_hue;
+    //uint8_t interval2 = interval/2;
+    if (interval & 1) interval *= -1;
+    for (uint8_t i=0; i<RGBLED_NUM; i++) {
+        uint8_t hue = 256/16*i+current_hue;
         sethsv(hue, rgblight_config.sat, rgblight_config.val, &led[i]);
     }
-    rgblight_set();
-    current_hue = hue_fix(current_hue - interval2*16);
+    //rgblight_set();
+    current_hue = current_hue - interval*2;
 }
 
 #if RGBLIGHT_MODES > 15
@@ -331,12 +364,12 @@ void rgblight_effect_snake(uint8_t interval)
             int8_t target_led = pos+i*increament;
             if (target_led < 0) target_led += RGBLED_NUM;
             else if (target_led >= RGBLED_NUM) target_led -= RGBLED_NUM;
-            sethsv(rgblight_config.hue+i*50, rgblight_config.sat, rgblight_config.val, &led[target_led]);
+            sethsv(rgblight_config.hue+i*16, rgblight_config.sat, rgblight_config.val, &led[target_led]);
         }
         pos += increament;
         if (pos > RGBLED_NUM) pos = 0;
         else if (pos < 0 ) pos = RGBLED_NUM;
-        rgblight_set();
+        //rgblight_set();
     }
 }
 #endif
@@ -346,7 +379,6 @@ void rgblight_effect_knight(uint8_t interval)
 {
     static int8_t pos = RGBLED_NUM - 1;
     static uint8_t sled_step = 0;
-    static uint16_t current_hue=0;
     uint8_t i;
     static int8_t increament = 1;
     if (++sled_step > interval) {
@@ -364,7 +396,7 @@ void rgblight_effect_knight(uint8_t interval)
         pos += increament;
         if (pos <= 0 - RGBLIGHT_EFFECT_KNIGHT_LENGTH || pos >= RGBLED_NUM) {
             increament *= -1;
-            current_hue = hue_fix(current_hue + 40);
+            current_hue = current_hue + 16;
             sethsv(current_hue, rgblight_config.sat, rgblight_config.val, &led[RGBLED_TEMP]);
         }
     }
