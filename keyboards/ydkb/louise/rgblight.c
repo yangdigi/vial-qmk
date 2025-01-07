@@ -187,17 +187,18 @@ void rgblight_toggle(void)
 
 void rgblight_action(uint8_t action)
 {
-    /*  0 toggle
-    1 mode-    2 mode+
-    3 hue-     4 hue+
-    5 sat-     6 sat+
-    7 val-     8 val+
+    /* QMK 键值顺序先加后减
+    0 toggle
+    1 mode+    2 mode-
+    3 hue+     4 hue-
+    5 sat+     6 sat-
+    7 val+     8 val-
     */
     uint8_t hue = rgblight_config.hue;
     uint8_t sat = rgblight_config.sat;
     uint8_t val = rgblight_config.val;
-    int8_t increament = 1;
-    if (action & 1) increament = -1;
+    int8_t increament = -1;
+    if (action & 1) increament = 1;
     if (get_mods() & MOD_BIT(KC_LSHIFT)) {
         increament *= -1;
     } 

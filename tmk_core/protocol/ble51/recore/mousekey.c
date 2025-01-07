@@ -29,8 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 report_mouse_t mouse_report = {};
 
-static uint8_t mouse_repeat_start = 0;
-static uint8_t mouse_wheel_timer = 0;
+static uint8_t mousekey_wheel_timer = 0;
 
 static uint8_t mousekey_accel = 0;
 
@@ -59,37 +58,38 @@ static void mousekey_debug(void);
 //uint8_t mk_wheel_time_to_max = MOUSEKEY_WHEEL_TIME_TO_MAX;
 
 
-static uint16_t last_timer = 0;
+static uint16_t mousekey_last_timer = 0;
 
 
-    
 void mousekey_task(void)
 {
+    //rapidfire_key_task();
 
-    if (timer_elapsed(last_timer) < (mouse_repeat_start == 2 ? 5 : 40)) //delay about 40ms to start //(mouse_repeat ? mk_interval : mk_delay*10))
-        return;
-
+    static uint8_t mouse_repeat_time_interval = 50;
+    //delay about 50ms to start //(mouse_repeat ? mk_interval : mk_delay*10))
+    if (timer_elapsed(mousekey_last_timer) < mouse_repeat_time_interval) return;
+    
     //int8_t *p = &mouse_report.x;
     //if ((*p++ | *p++ | *p++ | *p++) == 0) {
     if ((mouse_report.x | mouse_report.y | mouse_report.v | mouse_report.h) == 0) {
-    //if (mouse_report.x == 0 && mouse_report.y == 0 && mouse_report.v == 0 && mouse_report.h == 0)
-        mouse_repeat_start = 0;
+        mouse_repeat_time_interval = 50;
         return;
-    } else if (mouse_repeat_start < 2) {
-        mouse_repeat_start++;
-        return;
+    } else {
+        mouse_repeat_time_interval = 5;
     }
     //control wheel speed
-    int8_t mouse_v, mouse_h;
-    mouse_v = mouse_report.v;
-    mouse_h = mouse_report.h;
-    if ((++mouse_wheel_timer) & 0b1111) {
-        mouse_report.v = 0;
-        mouse_report.h = 0;
+    //int8_t mouse_v, mouse_h;
+    uint16_t *mouse_wheel = &mouse_report.v;
+    uint16_t save = *mouse_wheel;
+    //mouse_v = mouse_report.v;
+    //mouse_h = mouse_report.h;
+    if ((++mousekey_wheel_timer) & 0b1111) {
+        *mouse_wheel = 0;
     }
     mousekey_send();
-    mouse_report.v = mouse_v;
-    mouse_report.h = mouse_h;
+    *mouse_wheel = save;
+    //mouse_report.v = mouse_v;
+    //mouse_report.h = mouse_h;
 
     static uint8_t timer1 = 0;
     if (++timer1 > MOUSEKEY_REPEAT_UPDATE_INTERVAL) { //control mouse speedup
@@ -133,7 +133,7 @@ void mousekey_on(uint8_t code)
     else if (code == KC_MS_WH_LEFT)  mouse_report.h = -1;
     else if (code == KC_MS_WH_RIGHT) mouse_report.h =  1;
     else if (code <= KC_MS_ACCEL2)   mousekey_accel |= (1<<(code-KC_MS_ACCEL0)); //0xFD - 0xFF
-    if (code >= KC_MS_WH_UP && code <= KC_MS_WH_RIGHT) mouse_wheel_timer = 0;
+    if (code >= KC_MS_WH_UP && code <= KC_MS_WH_RIGHT) mousekey_wheel_timer = 0;
 }
 
 void mousekey_off(uint8_t code)
@@ -156,7 +156,7 @@ void mousekey_send(void)
 {
     mousekey_debug();
     host_mouse_send(&mouse_report);
-    last_timer = timer_read();
+    mousekey_last_timer = timer_read();
 }
 
 void mousekey_clear(void)

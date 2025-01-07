@@ -34,9 +34,12 @@ void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
             KC_V, // 2 Output Battery Value
             KC_L  // 3 Lock Mode
         };
+        // RGB_TOG 0x5cc1, RGB_VAI 0x5cc9, RGB_VAD 0x5cca
+        // Toggle, M+, M-, HUE+, HUE-, SAT+, SAT-, VAL+, VAL-
+        if (keycode >= RGB_TOG && keycode <= RGB_VAD) rgblight_action(keycode - RGB_TOG);
         if (keycode >= USER00) {
             if (keycode < USER04) command_extra(userx_to_command[keycode-USER00]);
-            else if (keycode <= USER12) rgblight_action(keycode - USER04);
+            //else if (keycode <= USER12) rgblight_action(keycode - USER04);
         }
     }
 }

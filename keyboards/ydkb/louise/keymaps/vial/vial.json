@@ -4,16 +4,7 @@
     {"name": "BT/USB", "title": "", "shortName": "BT/USB"},
     {"name": "BLERST", "title": "", "shortName": "BLERST"},
     {"name": "BAT%", "title": "", "shortName": "BAT%"},
-    {"name": "LkMode", "title": "", "shortName": "LkMode"},
-    {"name": "RGB_TG", "title": "", "shortName": "RGB_TG"},
-    {"name": "RGB_M-", "title": "", "shortName": "RGB_M-"},
-    {"name": "RGB_M+", "title": "", "shortName": "RGB_M+"},
-    {"name": "HUE-", "title": "", "shortName": "HUE-"},
-    {"name": "HUE+", "title": "", "shortName": "HUE+"},
-    {"name": "SAT-", "title": "", "shortName": "SAT-"},
-    {"name": "SAT+", "title": "", "shortName": "SAT+"},
-    {"name": "LUM-", "title": "", "shortName": "LUM-"},
-    {"name": "LUM+", "title": "", "shortName": "LUM+"}
+    {"name": "LkMode", "title": "", "shortName": "LkMode"}
   ], 
   "layouts": {
     "labels":[["BR", "1u", "1.25u"]], 
