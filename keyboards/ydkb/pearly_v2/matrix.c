@@ -206,8 +206,9 @@ static void select_row(uint8_t row)
 
 bool suspend_wakeup_condition(void)
 {
+    uint8_t matrix_keys_down = matrix_scan();
     if (BLE51_PowerState >= 10) {
-        uint8_t matrix_keys_down = matrix_scan();
+        //uint8_t matrix_keys_down = matrix_scan();
         if (matrix_keys_down == 2) {
             // K14 F, K17 J
             if (matrix_debouncing[1][4] == 0xff && matrix_debouncing[1][7] == 0xff) return true;
@@ -216,6 +217,9 @@ bool suspend_wakeup_condition(void)
         return false;
 
     } else {
+    #if 1
+        if (matrix_keys_down) return true;
+    #else
         select_all_rows();
         _delay_us(6);
         for (uint8_t i = 0; i < MATRIX_COLS; i++) {
@@ -223,6 +227,7 @@ bool suspend_wakeup_condition(void)
                 return true;
             }
         }
+    #endif
     }
     return false;
 }
