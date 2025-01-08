@@ -12,9 +12,10 @@ RESERVE_SIZE = 256
 # Build Options
 #   change yes to no to disable
 #
+KEYBOARD_SHARED_EP      = yes # 52B https://docs.qmk.fm/config_options#usb-endpoint-limitations
 CUSTOM_MATRIX           = yes   # Custom matrix file
-#UNICODE_ENABLE         = yes   # Unicode
-BOOTMAGIC_ENABLE        = yes   # Enable Bootmagic Lite
+UNICODE_ENABLE          = no   # Unicode
+BOOTMAGIC_ENABLE        = no    # Enable Bootmagic Lite
 MOUSEKEY_ENABLE        ?= yes   # Mouse keys
 EXTRAKEY_ENABLE        ?= yes   # Audio control and System control
 CONSOLE_ENABLE         ?= no    # Console for debug

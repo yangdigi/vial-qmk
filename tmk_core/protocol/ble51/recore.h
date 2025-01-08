@@ -20,6 +20,8 @@
 //#define type_num(x) send_nibble(x)
 #define type_num(x) type_numbers(x) //save 40B
 
+#define ledmapu_state_restore() 
+
 void type_numbers(uint16_t value);
 
 void suspend_power_down_action(void);

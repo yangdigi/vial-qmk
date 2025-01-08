@@ -29,17 +29,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ADC_PRESCALER (_BV(ADPS1) | _BV(ADPS0))
 #define C_CHARGE_WAIT() {if (col == 0 && row == 0) _delay_us(1);}
 #define C_DISCHARGE_WAIT()
+static inline void C_CHARGE_READY(void) { DDRD &= ~(1<<4); }
+static inline void C_DISCHARGE(void)    { DDRD |=  (1<<4); }
 
 static void ec_matrix_check(void);
 
-void adc_init(void) {
+void adc_init(void)
+{
     // High speed mode and MUX5
     ADCSRB = _BV(ADHSM) | (ADC_MUX & _BV(MUX5));
     //ADLAR 1,   left adjusted,  and MUX4..0
     ADMUX = AREF | _BV(ADLAR) | (ADC_MUX & 0b11111);
 }
 
-uint8_t adc_read8(void) {
+uint8_t adc_read8(void)
+{
     uint8_t adc_value;
     // Enable ADC and configure prescaler. Start ADC
     ADCSRA = _BV(ADEN) | _BV(ADSC) | ADC_PRESCALER;
@@ -55,33 +59,34 @@ uint8_t adc_read8(void) {
 }
 
 /* EC Matrix */
-#ifdef APC_ADJ_ENABLE
-#define EC_APC_VALUE ec_apc_value
-static uint8_t ec_apc_value = 120;
+#ifdef APC_ENABLE
+#define EC_AP_VALUE ec_ap_value
+static uint8_t ec_ap_value = 125;
 #else
-#define EC_APC_VALUE 128 //ec_apc_value // 120 for EC, 80 for MX
+#define EC_AP_VALUE 128 //ec_ap_value // 120 for EC, 80 for MX
 #endif
 #define EC_RESET_OFFSET 10
 uint8_t ec_actuation_point[MATRIX_ROWS][MATRIX_COLS] = {0};
 uint8_t ec_key_value[MATRIX_ROWS][MATRIX_COLS];
+//static bool ec_inited = 0;
 
-static inline void C_CHARGE_READY(void) { DDRD &= ~(1<<4); }
-static inline void C_DISCHARGE(void)    { DDRD |=  (1<<4); }
-
-static inline void ec_unselect_rows(void) {
+static inline void ec_unselect_rows(void)
+{
     // Clear row pin. Output low.
     PORTB = 0;
     DDRB = 0x7f;
     if (BLE51_PowerState < 2) _delay_us(6);
 }
 
-static inline void ec_select_row(uint8_t row) {
+static inline void ec_select_row(uint8_t row)
+{
     // Select row. Hi-Z
-    DDRB  &= ~(1<<row);
-    PORTB =  (1<<row);
+    DDRB  = ~row;
+    PORTB =  row;
 }
 
-void ec_matrix_init(void) {
+void ec_matrix_init(void)
+{
     DDRF  |=  0b11110010;
     PORTF  =  0b10000010;
 
@@ -95,7 +100,7 @@ void ec_matrix_init(void) {
 #if 0 //CONSOLE_ENABLE
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         for (uint8_t col = 0; col < MATRIX_COLS; col++) {
-            ec_actuation_point[row][col] = EC_APC_VALUE;
+            ec_actuation_point[row][col] = EC_AP_VALUE;
         }
     }
 #endif
@@ -118,7 +123,7 @@ uint8_t ec_get_key(uint8_t row, uint8_t col)
 {
     cli();
     C_CHARGE_READY();
-    ec_select_row(row);
+    ec_select_row(1<<row);
     C_CHARGE_WAIT();
     ec_key_value[row][col] = adc_read8();
     sei();
@@ -127,23 +132,23 @@ uint8_t ec_get_key(uint8_t row, uint8_t col)
     C_DISCHARGE();
     C_DISCHARGE_WAIT();
 
-    if (ec_key_value[row][col] < (EC_APC_VALUE - EC_RESET_OFFSET)) return 0;
-    else if (ec_key_value[row][col] >= EC_APC_VALUE) return 0x80;
+    if (ec_key_value[row][col] < (EC_AP_VALUE - EC_RESET_OFFSET)) return 0;
+    else if (ec_key_value[row][col] >= EC_AP_VALUE) return 0x80;
     else return 0b10;
 }
 
-#ifdef APC_ADJ_ENABLE
+#ifdef APC_ENABLE
 #define EC_APC_KEY_POS (VIA_EEPROM_CONFIG_END+1 + (APC_KEY_ROW * MATRIX_COLS + APC_KEY_COL) * 2)
-void ec_apc_update(void) {
-    static uint8_t ec_apc_level[10] = {88, 96, 104, 112, 120, 128, 136, 144, 152, 80};
-    /*  暂时使用方法:
-        保存层0的某个按键内，检测它如果有变化，就更新
-        数字0到9设置，0->9: 39,30->38; P0->P9, 98, 89->97
-    */
-    uint8_t apc_eeprom = eeprom_read_byte(EC_APC_KEY_POS);
-    if (apc_eeprom >= 89) apc_eeprom -= 59; //P1 to P0
-    apc_eeprom -= 30;
-    if (apc_eeprom < 10) ec_apc_value = ec_apc_level[apc_eeprom];
+void ec_apc_update(void)
+{
+    static const uint8_t ec_ap_level[8] = {128, 90, 100, 110, 120, 128, 144, 152};
+    static uint8_t last_level = 10;
+    // 最后一个Layout，8个选项，占3bit。
+    uint8_t new_level = (eeprom_read_byte(VIA_EEPROM_LAYOUT_OPTIONS_ADDR) & 0b111);
+    if (new_level != last_level && new_level < 8) {
+        ec_ap_value = ec_ap_level[new_level];
+        last_level = new_level;
+    }
 }
 #endif
 

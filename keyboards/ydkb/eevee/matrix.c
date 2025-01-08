@@ -120,7 +120,7 @@ uint8_t matrix_scan(void)
         if (matrix_keys_down >= 20) memset(matrix, 0, sizeof(matrix));
     }
 
-#if defined(DEBUG_SCAN_SPEED) || defined(APC_ADJ_ENABLE)
+#if defined(DEBUG_SCAN_SPEED) || defined(APC_ENABLE)
     static uint16_t test=0;
     static uint16_t test_timestamp = 0;
     test++;
@@ -129,7 +129,7 @@ uint8_t matrix_scan(void)
         #ifdef DEBUG_SCAN_SPEED
         scan_speed = test;
         #endif
-        #ifdef APC_ADJ_ENABLE
+        #ifdef APC_ENABLE
         ec_apc_update();
         #endif
         test = 0;
@@ -138,7 +138,7 @@ uint8_t matrix_scan(void)
       #endif
     }
 #endif
-    matrix_scan_quantum();
+    matrix_scan_quantum(); // needs this to run hook_keyboard_loop()
     return matrix_keys_down;
 }
 

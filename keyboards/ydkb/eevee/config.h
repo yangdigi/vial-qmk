@@ -4,7 +4,7 @@
 #include "config_ble51.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER_DATE     DOA1
+#define FW_VER_DATE     DP18
 #define VENDOR_ID       0x5944
 #define PRODUCT_ID      0x23EE
 #define DEVICE_VER      0x0001
@@ -12,13 +12,15 @@
 #define PRODUCT         Eevee Keyboard Uni (FW_VER)
 
 #define EC_INIT_CHECK_TIMES 0
-#define EPC_LV KC_P5
 
 /* key matrix size */
 #define MATRIX_ROWS 7
 #define MATRIX_COLS 16
-#define DEBOUNCE_DN 3
-#define DEBOUNCE_UP 3
+//#define FORCE_NKRO //32B
+//#define DEBOUNCE_2BIT_DN 1
+//#define DEBOUNCE_2BIT_UP 1
+#define DEBOUNCE_DN 3 //((DEBOUNCE_2BIT_DN + 1) * 2 - 1)
+#define DEBOUNCE_UP 3 //((DEBOUNCE_2BIT_UP + 1) * 2 - 1)
 
 #define DEFAULT_6KRO // macOS's Capslock switching between Chinese and English has compatibility issues with NKRO
 
@@ -26,7 +28,7 @@
 #define ws2812_DDRREG   DDRE
 #define ws2812_pin PE6
 #define RGBLED_NUM 16     // Number of LEDs
-#define RGBLIGHT_MODES 14 //less rgblight mode to save some space for vial 
+#define RGBLIGHT_MODES 9 //less rgblight mode to save some space for vial 
 
 /* BT Power Control */
 #define BT_POWERED    (~PORTD & (1<<5))
@@ -43,5 +45,17 @@
 #define CHARGING_FIX_VALUE 50
 #define CHARGING_STATE_INIT()    do { DDRE &= ~(1<<2); PORTE |= (1<<2);} while(0)
 
-#define BLE51_CONSUMER_ON_DELAY 128
+#define BLE51_NO_BATTERY_VOLTAGE
+#define BLE51_NO_ULTRA_LOW_BATTERY
 
+#define BLE51_CONSUMER_ON_DELAY 128  //scan slower
+
+
+/* disable action features */
+//#define NO_ACTION_LAYER
+//#define NO_ACTION_TAPPING
+#define NO_ACTION_ONESHOT  //930B
+//#define NO_ACTION_MACRO
+//#define NO_ACTION_FUNCTION
+#define NO_DEFAULT_COMMAND
+#define NO_RESET
