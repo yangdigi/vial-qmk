@@ -11,8 +11,7 @@
 #define MATRIX_COLS 8
 #define MATRIX_KEYS 43
 
-#define APC_KEY_ROW 1
-#define APC_KEY_COL 7
+#define APC_ENABLE
 
 #undef  BLE_NAME
 #define BLE_NAME "Eevee #40A BLE"

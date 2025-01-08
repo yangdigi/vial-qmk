@@ -11,12 +11,10 @@
 #define MATRIX_COLS 8
 #define MATRIX_KEYS 45
 
-#define APC_KEY_ROW 1
-#define APC_KEY_COL 7
+#define APC_ENABLE
 
 #undef  BLE_NAME
 #define BLE_NAME "Eevee #40B BLE"
-
 
 #define DYNAMIC_KEYMAP_LAYER_COUNT 6
 #define FLASH_KEYMAP_COUNT 1
