@@ -3,7 +3,7 @@
 #include "config_common.h"
 
 /* USB Device descriptor parameter */
-#define FW_VER_DATE     DOBP
+#define FW_VER_DATE     DP1H
 #define CONTACT(x,y)    x##y
 #define CONTACT2(x,y)   CONTACT(x,y)
 #define FW_VER          CONTACT2(VIAL_, FW_VER_DATE)
@@ -42,6 +42,7 @@
 #define RGBLIGHT_SLEEP
 #define RGB_DI_PIN B15
 #define RGBLED_NUM must_redefine
+//#define RGBLIGHT_DEFAULT_ON FALSE
 
 //#define SUSPEND_ACTION
 

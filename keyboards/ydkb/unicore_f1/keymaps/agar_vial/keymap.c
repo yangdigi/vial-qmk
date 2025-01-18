@@ -19,11 +19,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   },
   {
     {KC_GRAVE, KC_CAPSLOCK, KC_TRNS, KC_UP, KC_1, KC_2, KC_3, KC_TRNS},
-    {KC_TRNS, KC_TRNS, KC_VOLU, KC_TRNS, KC_TRNS, KC_TRNS, KC_VOLD, KC_TRNS},
-    {KC_4, KC_TRNS, KC_5, KC_TRNS, KC_6, KC_7, KC_TRNS, KC_TRNS},
-    {KC_TRNS, KC_TRNS, KC_TRNS, KC_CALC, KC_TRNS, KC_TRNS, KC_TRNS, KC_MUTE},
+    {KC_TRNS, KC_TRNS, KC_VOLU, KC_TRNS, KC_NO, KC_TRNS, KC_VOLD, KC_TRNS},
+    {KC_4, RGB_TOG, KC_5, RGB_MOD, KC_6, KC_7, KC_TRNS, KC_TRNS},
+    {KC_TRNS, RGB_SAI, KC_TRNS, KC_CALC, KC_TRNS, KC_TRNS, RGB_HUI, KC_MUTE},
     {KC_8, KC_PSCREEN, KC_9, KC_0, KC_MINUS, KC_SCROLLLOCK, KC_PAUSE, KC_UP},
-    {KC_HOME, KC_END, KC_TRNS, KC_TRNS, KC_TRNS, KC_KP_SLASH, KC_TRNS, KC_TRNS},
+    {KC_HOME, KC_END, KC_TRNS, KC_TRNS, KC_TRNS, KC_KP_SLASH, KC_TRNS, RGB_VAI},
     {KC_EQUAL, KC_INSERT, KC_DELETE, KC_PAUSE, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO},
     {KC_TRNS, KC_NO, KC_TRNS, KC_TRNS, KC_DOWN, KC_PGDOWN, KC_RIGHT, KC_PGUP},
     {KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO},
@@ -34,3 +34,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     {KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO}
   },
 };
+
+#include "led.h"
+#include "rgblight.h"
+
+extern uint8_t indicator_color_config[];
+void rgb_extra_process(LED_TYPE *rgbled) {
+    if ((indicator_color_config[1] & 1) == 1) { //disable Bottom RGB, set them to 0
+        memset(&rgbled[PHY_INDICATOR_NUM], 0, RGBLED_NUM*3);
+    }
+}
